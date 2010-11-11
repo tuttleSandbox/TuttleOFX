@@ -32,14 +32,14 @@ BOOST_AUTO_TEST_CASE( time_shift )
 		TCOUT( "__________________________________________________2" );
 		// Setup parameters
 		read1.getParam( "filename" ).set( "data/input-###.png" );
-		timeshift1.getParam("offset").set( 3 );
+		timeshift1.getParam("offset").set( 0 );
 		write1.getParam( "filename" ).set( "data/output_####.png" );
 
 		TCOUT( "__________________________________________________3" );
 		g.connect( read1, invert1 );
-//		g.connect( invert1, timeshift1 );
-//		g.connect( timeshift1, write1 );
-		g.connect( invert1, write1 );
+		g.connect( invert1, timeshift1 );
+		g.connect( timeshift1, write1 );
+//		g.connect( invert1, write1 );
 
 		TCOUT( "__________________________________________________4" );
 		std::list<std::string> outputs;
