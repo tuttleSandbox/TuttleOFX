@@ -210,9 +210,9 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 		//fill renderGraph from _graph with each node deployed at all times
 		graph::visitor::DeployTime<InternalGraphImpl> deployTimeVisitor( renderGraph, time );
 		renderGraph.depthFirstSearchReverse( deployTimeVisitor );
-#ifndef TUTTLE_PRODUCTION
-		graph::exportDebugAsDOT( "graphprocess_a.dot", renderGraph );
-#endif
+//#ifndef TUTTLE_PRODUCTION
+//		graph::exportDebugAsDOT( "graphprocess_a.dot", renderGraph );
+//#endif
 
 		TCOUT( "---------------------------------------- build renderGraphAtTime" );
 		// create a new graph with time information
@@ -237,10 +237,19 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 			Vertex& out = renderGraph.targetInstance( ed );
 			TCOUT_X( 20, "." );
 			TCOUT_VAR( e );
-			BOOST_FOREACH( const Edge::TimeMap::value_type& tm, e._timesNeeded )
+//			BOOST_FOREACH( const Edge::TimeMap::value_type& tm, e._timesNeeded )
+			for( Edge::TimeMap::const_iterator it = e._timesNeeded.begin(), itEnd = e._timesNeeded.end();
+			     it != itEnd;
+			     ++it )
 			{
-				BOOST_FOREACH( const OfxTime t2, tm.second )
+				const Edge::TimeMap::value_type& tm = *it;
+//				BOOST_FOREACH( const OfxTime t2, tm.second )
+				for( Edge::TimesSet::const_iterator itt = tm.second.begin(), ittEnd = tm.second.end();
+				     itt != ittEnd;
+				     ++itt )
 				{
+					const OfxTime t2 = *itt;
+					TCOUT_X( 20, "-" );
 					TCOUT_VAR2( in.getKey(), tm.first );
 					TCOUT_VAR2( out.getKey(), t2 );
 					TCOUT_VAR( e.getInAttrName() );
@@ -277,9 +286,9 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 			ProcessVertexAtTime& v = renderGraphAtTime.targetInstance( ed );
 			v.getProcessDataAtTime()._finalNode = true;
 		}
-#ifndef TUTTLE_PRODUCTION
-		graph::exportDebugAsDOT( "graphprocess_b.dot", renderGraphAtTime );
-#endif
+//#ifndef TUTTLE_PRODUCTION
+//		graph::exportDebugAsDOT( "graphprocess_b.dot", renderGraphAtTime );
+//#endif
 		
 		TCOUT( "---------------------------------------- preprocess 1" );
 		graph::visitor::PreProcess1<InternalGraphAtTimeImpl> preProcess1Visitor( renderGraphAtTime );
@@ -297,9 +306,9 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 //		graph::visitor::RemoveIdentityNodes<InternalGraphAtTimeImpl> removeIdentityVisitor( renderGraphAtTime );
 //		renderGraphAtTime.depthFirstVisit( removeIdentityVisitor, outputAtTime );
 
-#ifndef TUTTLE_PRODUCTION
-		graph::exportDebugAsDOT( "graphprocess_c.dot", renderGraphAtTime );
-#endif
+//#ifndef TUTTLE_PRODUCTION
+//		graph::exportDebugAsDOT( "graphprocess_c.dot", renderGraphAtTime );
+//#endif
 
 		TCOUT( "---------------------------------------- reconnect clips" );
 		connectClips<InternalGraphAtTimeImpl>( renderGraphAtTime );
@@ -307,9 +316,9 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 		TCOUT( "---------------------------------------- optimize graph" );
 		graph::visitor::OptimizeGraph<InternalGraphAtTimeImpl> optimizeGraphVisitor( renderGraphAtTime );
 		renderGraphAtTime.depthFirstVisit( optimizeGraphVisitor, outputAtTime );
-#ifndef TUTTLE_PRODUCTION
-		graph::exportDebugAsDOT( "graphprocess_d.dot", renderGraphAtTime );
-#endif
+//#ifndef TUTTLE_PRODUCTION
+//		graph::exportDebugAsDOT( "graphprocess_d.dot", renderGraphAtTime );
+//#endif
 		
 		/*
 		InternalGraphImpl tmpGraph;

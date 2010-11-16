@@ -31,17 +31,17 @@ int main( int argc, char** argv )
 		COUT( "__________________________________________________1" );
 
 		Graph g;
-		Graph::Node& read1    = g.createNode( "fr.tuttle.pngreader" );
+		Graph::Node& read1    = g.createNode( "fr.tuttle.jpegreader" );
 		Graph::Node& bitdepth = g.createNode( "fr.tuttle.bitdepth" );
 		Graph::Node& invert1  = g.createNode( "fr.tuttle.invert" );
-		Graph::Node& write1    = g.createNode( "fr.tuttle.pngwriter" );
+		Graph::Node& write1    = g.createNode( "fr.tuttle.jpegwriter" );
 
 		COUT( "__________________________________________________2" );
 		// Setup parameters
-		read1.getParam( "filename" ).set( "data/input.png" );
+		read1.getParam( "filename" ).set( "data/input.jpg" );
 		bitdepth.getParam( "outputBitDepth" ).set( 3 );
 		COUT_VAR( bitdepth.getParam( "outputBitDepth" ).getString() );
-		write1.getParam( "filename" ).set( "data/output1.png" );
+		write1.getParam( "filename" ).set( "data/output1.jpg" );
 
 		COUT( "__________________________________________________3" );
 		g.connect( read1, bitdepth );

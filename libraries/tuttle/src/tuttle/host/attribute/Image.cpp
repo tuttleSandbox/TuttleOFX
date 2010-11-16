@@ -8,9 +8,9 @@
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
 
-#ifndef TUTTLE_PRODUCTION
- #include <boost/gil/extension/io/png_io.hpp>
-#endif
+//#ifndef TUTTLE_PRODUCTION
+// #include <boost/gil/extension/io/png_io.hpp>
+//#endif
 
 namespace tuttle {
 namespace host {
@@ -146,62 +146,62 @@ void Image::copy( D_VIEW& dst, S_VIEW& src, const OfxPointI& dstCorner,
 #ifndef TUTTLE_PRODUCTION
 void Image::debugSaveAsPng( const std::string& filename )
 {
-	using namespace boost::gil;
-	switch( getComponentsType() )
-	{
-		case ofx::imageEffect::ePixelComponentRGBA:
-			switch( getBitDepth() )
-			{
-				case ofx::imageEffect::eBitDepthUByte:
-				{
-					rgba8_view_t view = gilViewFromImage<rgba8_view_t >( this );
-					png_write_view( filename, view );
-					break;
-				}
-				case ofx::imageEffect::eBitDepthUShort:
-				{
-					rgba16_view_t view = gilViewFromImage<rgba16_view_t >( this );
-					png_write_view( filename, view );
-					break;
-				}
-				case ofx::imageEffect::eBitDepthFloat:
-				{
-					rgba32f_view_t view = gilViewFromImage<rgba32f_view_t >( this );
-					png_write_view( filename, color_converted_view<rgba8_pixel_t>( view ) );
-					break;
-				}
-				default:
-					break;
-			}
-			break;
-		case ofx::imageEffect::ePixelComponentAlpha:
-			switch( getBitDepth() )
-			{
-				case ofx::imageEffect::eBitDepthUByte:
-				{
-					gray8_view_t view = gilViewFromImage<gray8_view_t >( this );
-					png_write_view( filename, view );
-					break;
-				}
-				case ofx::imageEffect::eBitDepthUShort:
-				{
-					gray16_view_t view = gilViewFromImage<gray16_view_t >( this );
-					png_write_view( filename, view );
-					break;
-				}
-				case ofx::imageEffect::eBitDepthFloat:
-				{
-					gray32f_view_t view = gilViewFromImage<gray32f_view_t >( this );
-					png_write_view( filename, color_converted_view<rgb8_pixel_t>( view ) );
-					break;
-				}
-				default:
-					break;
-			}
-			break;
-		default:
-			break;
-	}
+//	using namespace boost::gil;
+//	switch( getComponentsType() )
+//	{
+//		case ofx::imageEffect::ePixelComponentRGBA:
+//			switch( getBitDepth() )
+//			{
+//				case ofx::imageEffect::eBitDepthUByte:
+//				{
+//					rgba8_view_t view = gilViewFromImage<rgba8_view_t >( this );
+//					png_write_view( filename, view );
+//					break;
+//				}
+//				case ofx::imageEffect::eBitDepthUShort:
+//				{
+//					rgba16_view_t view = gilViewFromImage<rgba16_view_t >( this );
+//					png_write_view( filename, view );
+//					break;
+//				}
+//				case ofx::imageEffect::eBitDepthFloat:
+//				{
+//					rgba32f_view_t view = gilViewFromImage<rgba32f_view_t >( this );
+//					png_write_view( filename, color_converted_view<rgba8_pixel_t>( view ) );
+//					break;
+//				}
+//				default:
+//					break;
+//			}
+//			break;
+//		case ofx::imageEffect::ePixelComponentAlpha:
+//			switch( getBitDepth() )
+//			{
+//				case ofx::imageEffect::eBitDepthUByte:
+//				{
+//					gray8_view_t view = gilViewFromImage<gray8_view_t >( this );
+//					png_write_view( filename, view );
+//					break;
+//				}
+//				case ofx::imageEffect::eBitDepthUShort:
+//				{
+//					gray16_view_t view = gilViewFromImage<gray16_view_t >( this );
+//					png_write_view( filename, view );
+//					break;
+//				}
+//				case ofx::imageEffect::eBitDepthFloat:
+//				{
+//					gray32f_view_t view = gilViewFromImage<gray32f_view_t >( this );
+//					png_write_view( filename, color_converted_view<rgb8_pixel_t>( view ) );
+//					break;
+//				}
+//				default:
+//					break;
+//			}
+//			break;
+//		default:
+//			break;
+//	}
 }
 
 #endif
