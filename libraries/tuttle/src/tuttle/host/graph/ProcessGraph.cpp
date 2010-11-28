@@ -174,7 +174,7 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 		if( ! v.isFake() )
 		{
 			v.setProcessData( defaultOptions );
-			v.getProcessNode().setData( &v._data );
+			v.getProcessNode().setProcessData( &v._data );
 		}
 	}
 
@@ -265,7 +265,7 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 			ProcessVertexAtTime& v = renderGraphAtTime.instance(vd);
 			if( ! v.isFake() )
 			{
-				v.getProcessNode().setData( &v._data );
+				v.getProcessNode().setProcessData( &v._data );
 			}
 		}
 

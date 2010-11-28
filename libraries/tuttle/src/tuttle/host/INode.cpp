@@ -1,5 +1,8 @@
 #include "INode.hpp"
 
+#include "ImageEffectNode.hpp"
+#include "InputBufferNode.hpp"
+
 #include <tuttle/host/graph/ProcessVertexData.hpp>
 #include <tuttle/host/graph/ProcessVertexAtTimeData.hpp>
 
@@ -10,12 +13,33 @@ namespace host {
 
 INode::~INode() {}
 
-void INode::setData( Data* data )
+ImageEffectNode& INode::asImageEffectNode( )
+{
+	return dynamic_cast<ImageEffectNode&> ( *this );
+}
+
+const ImageEffectNode& INode::asImageEffectNode( ) const
+{
+	return dynamic_cast<const ImageEffectNode&> ( *this );
+}
+
+InputBufferNode& INode::asInputBufferNode( )
+{
+	return dynamic_cast<InputBufferNode&> ( *this );
+}
+
+const InputBufferNode& INode::asInputBufferNode( ) const
+{
+	return dynamic_cast<const InputBufferNode&> ( *this );
+}
+
+
+void INode::setProcessData( Data* data )
 {
 	_data = data;
 }
 
-void INode::setData( DataAtTime* dataAtTime )
+void INode::setProcessData( DataAtTime* dataAtTime )
 {
 	_dataAtTime[dataAtTime->_time] = dataAtTime;
 }
@@ -68,6 +92,10 @@ INode::DataAtTime& INode::getData( const OfxTime time )
 	return const_cast<DataAtTime&>( const_cast<const This*>(this)->getData(time) );
 }
 
+std::ostream& operator<<( std::ostream& os, const INode& v )
+{
+	return v.print(os);
+}
 
 }
 }

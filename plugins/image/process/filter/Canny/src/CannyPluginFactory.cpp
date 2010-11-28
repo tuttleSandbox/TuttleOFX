@@ -17,9 +17,9 @@ static const bool kSupportTiles = false;
  */
 void CannyPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 {
-	desc.setLabels( "Canny", "Canny",
+	desc.setLabels( "TuttleCanny", "Canny",
 		            "Canny" );
-	desc.setPluginGrouping( "tuttle" );
+	desc.setPluginGrouping( "tuttle/image/process/filter" );
 
 	// add the supported contexts, only filter at the moment
 	desc.addSupportedContext( OFX::eContextFilter );
