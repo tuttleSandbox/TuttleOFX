@@ -8,6 +8,7 @@
 #include <boost/gil/extension/numeric/kernel.hpp>
 #include <boost/gil/extension/numeric/convolve.hpp>
 #include <boost/gil/extension/numeric/pixel_by_channel.hpp>
+#include <boost/gil/extension/typedefs.hpp>
 #include <boost/gil/utilities.hpp>
 #include <boost/mpl/if.hpp>
 #include <boost/type_traits/is_floating_point.hpp>
@@ -54,9 +55,7 @@ void SobelProcess<View>::multiThreadProcessImages( const OfxRectI& procWindowRoW
 	
 	typedef typename View::point_t Point;
 	typedef typename bgil::channel_mapping_type<View>::type Channel;
-	typedef typename mpl::if_< is_floating_point<Channel>,
-	                           Channel,
-							   bgil::bits32f>::type ChannelFloat;
+	typedef typename floating_channel_type_t<Channel>::type ChannelFloat;
 	typedef bgil::pixel<ChannelFloat, gray_layout_t> PixelGray;
 	typedef bgil::image<PixelGray, false> ImageGray;
 	typedef typename ImageGray::view_t ViewGray;
@@ -84,13 +83,40 @@ void SobelProcess<View>::multiThreadProcessImages( const OfxRectI& procWindowRoW
 		}
 		else
 		{
-			correlate_rows_cols<PixelGray>(
-				color_converted_view<PixelGray>( this->_srcView ),
-				_params._xKernelGaussianDerivative,
-				_params._xKernelGaussian,
-				kth_channel_view<0>(dst),
-				proc_tl,
-				_params._boundary_option );
+			switch( _params._pass )
+			{
+				case eParamPassFull:
+				{
+					correlate_rows_cols<PixelGray>(
+						color_converted_view<PixelGray>( this->_srcView ),
+						_params._xKernelGaussianDerivative,
+						_params._xKernelGaussian,
+						kth_channel_view<0>(dst),
+						proc_tl,
+						_params._boundary_option );
+					break;
+				}
+				case eParamPass1:
+				{
+					correlate_rows<PixelGray>(
+						color_converted_view<PixelGray>( this->_srcView ),
+						_params._xKernelGaussianDerivative,
+						kth_channel_view<0>(dst),
+						proc_tl,
+						_params._boundary_option );
+					break;
+				}
+				case eParamPass2:
+				{
+					correlate_cols<PixelGray>(
+						kth_channel_view<0>( this->_srcView ),
+						_params._xKernelGaussian,
+						kth_channel_view<0>(dst),
+						proc_tl,
+						_params._boundary_option );
+					break;
+				}
+			}
 		}
 	}
 	if( progressForward( dst.height() ) )
@@ -113,13 +139,40 @@ void SobelProcess<View>::multiThreadProcessImages( const OfxRectI& procWindowRoW
 		}
 		else
 		{
-			correlate_rows_cols<PixelGray>(
-				color_converted_view<PixelGray>( this->_srcView ),
-				_params._yKernelGaussian,
-				_params._yKernelGaussianDerivative,
-				kth_channel_view<1>(dst),
-				proc_tl,
-				_params._boundary_option );
+			switch( _params._pass )
+			{
+				case eParamPassFull:
+				{
+					correlate_rows_cols<PixelGray>(
+						color_converted_view<PixelGray>( this->_srcView ),
+						_params._yKernelGaussian,
+						_params._yKernelGaussianDerivative,
+						kth_channel_view<1>(dst),
+						proc_tl,
+						_params._boundary_option );
+					break;
+				}
+				case eParamPass1:
+				{
+					correlate_rows<PixelGray>(
+						color_converted_view<PixelGray>( this->_srcView ),
+						_params._yKernelGaussian,
+						kth_channel_view<1>(dst),
+						proc_tl,
+						_params._boundary_option );
+					break;
+				}
+				case eParamPass2:
+				{
+					correlate_cols<PixelGray>(
+						kth_channel_view<1>( this->_srcView ),
+						_params._yKernelGaussianDerivative,
+						kth_channel_view<1>(dst),
+						proc_tl,
+						_params._boundary_option );
+					break;
+				}
+			}
 		}
 	}
 	if( progressForward( dst.height() ) )

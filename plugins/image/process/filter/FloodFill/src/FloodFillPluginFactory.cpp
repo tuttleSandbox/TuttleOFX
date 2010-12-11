@@ -1,12 +1,14 @@
-#include "CannyPluginFactory.hpp"
-#include "CannyPlugin.hpp"
-#include "CannyDefinitions.hpp"
+#include "FloodFillPluginFactory.hpp"
+#include "FloodFillPlugin.hpp"
+#include "FloodFillDefinitions.hpp"
 
 #include <tuttle/plugin/ImageGilProcessor.hpp>
 
+#include <limits>
+
 namespace tuttle {
 namespace plugin {
-namespace canny {
+namespace floodFill {
 
 static const bool kSupportTiles = false;
 
@@ -15,10 +17,10 @@ static const bool kSupportTiles = false;
  * @brief Function called to describe the plugin main features.
  * @param[in, out] desc Effect descriptor
  */
-void CannyPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
+void FloodFillPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 {
-	desc.setLabels( "TuttleCanny", "Canny",
-		            "Canny" );
+	desc.setLabels( "TuttleFloodFill", "FloodFill",
+		            "FloodFill" );
 	desc.setPluginGrouping( "tuttle/image/process/filter" );
 
 	// add the supported contexts, only filter at the moment
@@ -32,7 +34,6 @@ void CannyPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 
 	// plugin flags
 	desc.setSupportsTiles( kSupportTiles );
-	desc.setRenderThreadSafety( OFX::eRenderFullySafe );
 }
 
 /**
@@ -40,7 +41,7 @@ void CannyPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
  * @param[in, out]   desc       Effect descriptor
  * @param[in]        context    Application context
  */
-void CannyPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
+void FloodFillPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
                                                   OFX::EContext context )
 {
 	OFX::ClipDescriptor* srcClip = desc.defineClip( kOfxImageEffectSimpleSourceClipName );
@@ -53,11 +54,7 @@ void CannyPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 	dstClip->addSupportedComponent( OFX::ePixelComponentRGBA );
 	dstClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	dstClip->setSupportsTiles( kSupportTiles );
-
-	OFX::BooleanParamDescriptor* hysteresisThresholding = desc.defineBooleanParam( kParamHysteresis );
-	hysteresisThresholding->setLabel( "Hysteresis thresholding" );
-	hysteresisThresholding->setDefault( true );
-
+	
 	OFX::DoubleParamDescriptor* upperThres = desc.defineDoubleParam( kParamUpperThres );
 	upperThres->setLabel( "Upper thresold" );
 	upperThres->setDefault( 0.5 );
@@ -70,17 +67,19 @@ void CannyPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 	lowerThres->setRange( 0.0, std::numeric_limits<double>::max() );
 	lowerThres->setDisplayRange( 0.0, 1.0 );
 
-	OFX::BooleanParamDescriptor* fill = desc.defineBooleanParam( kParamFillAllChannels );
-	fill->setLabel( "Fill all channels" );
-	fill->setHint( "Fill all channels with result" );
-	fill->setDefault( true );
+	OFX::BooleanParamDescriptor* minmax = desc.defineBooleanParam( kParamMinMaxRelative );
+	minmax->setLabel( "Relative to min/max" );
+	minmax->setHint( "Use theshold values relative to min/max" );
+	minmax->setDefault( true );
 
-	OFX::ChoiceParamDescriptor* border = desc.defineChoiceParam( kParamBorder );
-	border->setLabel( "Border" );
-//	border->setHint( "Border method." );
-	border->appendOption( kParamBorderBlack );
-//	border->appendOption( kParamBorderPadded );
-	border->setDefault( 0 );
+	OFX::ChoiceParamDescriptor* method = desc.defineChoiceParam( kParamMethod );
+	method->setLabel( "Method" );
+	method->appendOption( kParamMethod4Connections );
+	method->appendOption( kParamMethod8Connections );
+#ifndef TUTTLE_PRODUCTION
+	method->appendOption( kParamMethodBruteForce );
+#endif
+	method->setDefault( 1 );
 }
 
 /**
@@ -89,10 +88,10 @@ void CannyPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
  * @param[in] context Application context
  * @return  plugin instance
  */
-OFX::ImageEffect* CannyPluginFactory::createInstance( OfxImageEffectHandle handle,
+OFX::ImageEffect* FloodFillPluginFactory::createInstance( OfxImageEffectHandle handle,
                                                             OFX::EContext context )
 {
-	return new CannyPlugin( handle );
+	return new FloodFillPlugin( handle );
 }
 
 }

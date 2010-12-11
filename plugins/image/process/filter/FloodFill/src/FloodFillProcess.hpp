@@ -1,33 +1,36 @@
-#ifndef _TUTTLE_PLUGIN_CANNY_PROCESS_HPP_
-#define _TUTTLE_PLUGIN_CANNY_PROCESS_HPP_
+#ifndef _TUTTLE_PLUGIN_FLOODFILL_PROCESS_HPP_
+#define _TUTTLE_PLUGIN_FLOODFILL_PROCESS_HPP_
 
 #include <tuttle/plugin/ImageGilFilterProcessor.hpp>
 #include <boost/scoped_ptr.hpp>
 
 namespace tuttle {
 namespace plugin {
-namespace canny {
+namespace floodFill {
 
 /**
- * @brief Canny process
+ * @brief FloodFill process
  *
  */
 template<class View>
-class CannyProcess : public ImageGilFilterProcessor<View>
+class FloodFillProcess : public ImageGilFilterProcessor<View>
 {
 public:
 	typedef typename View::value_type Pixel;
 	typedef typename boost::gil::channel_type<View>::type Channel;
 	typedef float Scalar;
 protected :
-    CannyPlugin&    _plugin;            ///< Rendering plugin
-	CannyProcessParams<Scalar> _params; ///< parameters
+    FloodFillPlugin&    _plugin;            ///< Rendering plugin
+	FloodFillProcessParams<Scalar> _params; ///< parameters
+
+	Scalar _lowerThres;
+	Scalar _upperThres;
 
 public:
-    CannyProcess( CannyPlugin& effect );
+    FloodFillProcess( FloodFillPlugin& effect );
 
 	void setup( const OFX::RenderArguments& args );
-	
+
     void multiThreadProcessImages( const OfxRectI& procWindowRoW );
 };
 
@@ -35,6 +38,6 @@ public:
 }
 }
 
-#include "CannyProcess.tcc"
+#include "FloodFillProcess.tcc"
 
 #endif

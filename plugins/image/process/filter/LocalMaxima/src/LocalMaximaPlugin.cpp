@@ -1,6 +1,6 @@
-#include "CannyPlugin.hpp"
-#include "CannyProcess.hpp"
-#include "CannyDefinitions.hpp"
+#include "LocalMaximaPlugin.hpp"
+#include "LocalMaximaProcess.hpp"
+#include "LocalMaximaDefinitions.hpp"
 
 #include <tuttle/common/utils/global.hpp>
 #include <ofxsImageEffect.h>
@@ -9,38 +9,28 @@
 
 namespace tuttle {
 namespace plugin {
-namespace canny {
+namespace localmaxima {
 
 
-CannyPlugin::CannyPlugin( OfxImageEffectHandle handle ) :
+LocalMaximaPlugin::LocalMaximaPlugin( OfxImageEffectHandle handle ) :
 ImageEffect( handle )
 {
     _clipSrc = fetchClip( kOfxImageEffectSimpleSourceClipName );
     _clipDst = fetchClip( kOfxImageEffectOutputClipName );
 
-	_paramHysteresis = fetchBooleanParam( kParamHysteresis );
-	_paramUpperThres = fetchDoubleParam( kParamUpperThres );
-	_paramLowerThres = fetchDoubleParam( kParamLowerThres );
-	_paramFillAllChannels = fetchBooleanParam( kParamFillAllChannels );
 	_paramBorder = fetchChoiceParam( kParamBorder );
 }
 
-CannyProcessParams<CannyPlugin::Scalar> CannyPlugin::getProcessParams( const OfxPointD& renderScale ) const
+LocalMaximaProcessParams<LocalMaximaPlugin::Scalar> LocalMaximaPlugin::getProcessParams( const OfxPointD& renderScale ) const
 {
-	CannyProcessParams<Scalar> params;
-
-	params._hysteresis = _paramHysteresis->getValue();
-	params._upperThres = _paramUpperThres->getValue();
-	params._lowerThres = std::min( _paramLowerThres->getValue(), params._upperThres );
-
-	params._fillAllChannels = _paramFillAllChannels->getValue();
+	LocalMaximaProcessParams<Scalar> params;
 
 	params._border     = static_cast<EParamBorder>( _paramBorder->getValue() );
 
 	return params;
 }
 
-void CannyPlugin::changedParam( const OFX::InstanceChangedArgs &args, const std::string &paramName )
+void LocalMaximaPlugin::changedParam( const OFX::InstanceChangedArgs &args, const std::string &paramName )
 {
 //    if( paramName == kParamHelpButton )
 //    {
@@ -50,9 +40,9 @@ void CannyPlugin::changedParam( const OFX::InstanceChangedArgs &args, const std:
 //    }
 }
 
-bool CannyPlugin::getRegionOfDefinition( const OFX::RegionOfDefinitionArguments& args, OfxRectD& rod )
+bool LocalMaximaPlugin::getRegionOfDefinition( const OFX::RegionOfDefinitionArguments& args, OfxRectD& rod )
 {
-	CannyProcessParams<Scalar> params = getProcessParams();
+	LocalMaximaProcessParams<Scalar> params = getProcessParams();
 	OfxRectD srcRod = _clipSrc->getCanonicalRod( args.time );
 
 	switch( params._border )
@@ -69,9 +59,9 @@ bool CannyPlugin::getRegionOfDefinition( const OFX::RegionOfDefinitionArguments&
 	return false;
 }
 
-void CannyPlugin::getRegionsOfInterest( const OFX::RegionsOfInterestArguments& args, OFX::RegionOfInterestSetter& rois )
+void LocalMaximaPlugin::getRegionsOfInterest( const OFX::RegionsOfInterestArguments& args, OFX::RegionOfInterestSetter& rois )
 {
-	CannyProcessParams<Scalar> params = getProcessParams();
+	LocalMaximaProcessParams<Scalar> params = getProcessParams();
 	OfxRectD srcRod = _clipSrc->getCanonicalRod( args.time );
 
 	OfxRectD srcRoi;
@@ -83,9 +73,9 @@ void CannyPlugin::getRegionsOfInterest( const OFX::RegionsOfInterestArguments& a
 }
 
 
-bool CannyPlugin::isIdentity( const OFX::RenderArguments& args, OFX::Clip*& identityClip, double& identityTime )
+bool LocalMaximaPlugin::isIdentity( const OFX::RenderArguments& args, OFX::Clip*& identityClip, double& identityTime )
 {
-//	CannyProcessParams<Scalar> params = getProcessParams();
+//	LocalMaximaProcessParams<Scalar> params = getProcessParams();
 //	if( params._in == params._out )
 //	{
 //		identityClip = _clipSrc;
@@ -99,7 +89,7 @@ bool CannyPlugin::isIdentity( const OFX::RenderArguments& args, OFX::Clip*& iden
  * @brief The overridden render function
  * @param[in]   args     Rendering parameters
  */
-void CannyPlugin::render( const OFX::RenderArguments &args )
+void LocalMaximaPlugin::render( const OFX::RenderArguments &args )
 {
 	using namespace boost::gil;
     // instantiate the render code based on the pixel depth of the dst clip
@@ -113,19 +103,19 @@ void CannyPlugin::render( const OFX::RenderArguments &args )
         {
             case OFX::eBitDepthUByte :
             {
-                CannyProcess<rgba8_view_t> p( *this );
+                LocalMaximaProcess<rgba8_view_t> p( *this );
                 p.setupAndProcess( args );
                 break;
             }
             case OFX::eBitDepthUShort :
             {
-                CannyProcess<rgba16_view_t> p( *this );
+                LocalMaximaProcess<rgba16_view_t> p( *this );
                 p.setupAndProcess( args );
                 break;
             }
             case OFX::eBitDepthFloat :
             {
-                CannyProcess<rgba32f_view_t> p( *this );
+                LocalMaximaProcess<rgba32f_view_t> p( *this );
                 p.setupAndProcess( args );
                 break;
             }
@@ -142,19 +132,19 @@ void CannyPlugin::render( const OFX::RenderArguments &args )
 //        {
 //            case OFX::eBitDepthUByte :
 //            {
-//                CannyProcess<gray8_view_t> p( *this );
+//                LocalMaximaProcess<gray8_view_t> p( *this );
 //                p.setupAndProcess( args );
 //                break;
 //            }
 //            case OFX::eBitDepthUShort :
 //            {
-//                CannyProcess<gray16_view_t> p( *this );
+//                LocalMaximaProcess<gray16_view_t> p( *this );
 //                p.setupAndProcess( args );
 //                break;
 //            }
 //            case OFX::eBitDepthFloat :
 //            {
-//                CannyProcess<gray32f_view_t> p( *this );
+//                LocalMaximaProcess<gray32f_view_t> p( *this );
 //                p.setupAndProcess( args );
 //                break;
 //            }
