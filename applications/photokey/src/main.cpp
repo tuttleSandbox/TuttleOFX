@@ -142,6 +142,7 @@ int main( int argc, char** argv )
 		Graph::Node& colorSuppr = g.createNode( "fr.tuttle.duranduboi.colorsuppress" ); // suppression BG
 		Graph::Node& invertAlpha  = g.createNode( "fr.tuttle.invert" );
 		Graph::Node& normalize = g.createNode( "fr.tuttle.duranduboi.normalize" ); // amelio qualité masque alpha
+		Graph::Node& gamma = g.createNode( "fr.tuttle.gamma" ); // amelio qualité masque alpha
 		Graph::Node& merge  = g.createNode( "fr.tuttle.merge" );
 		Graph::Node& write    = g.createNode( "fr.tuttle.jpegwriter" );
 		Graph::Node& writeKey    = g.createNode( "fr.tuttle.jpegwriter" );
@@ -176,6 +177,8 @@ int main( int argc, char** argv )
 		normalize.getParam( "processG" ).set( false );
 		normalize.getParam( "processB" ).set( false );
 		normalize.getParam( "processA" ).set( true );
+		gamma.getParam( "gammaType" ).set( "RGBA" );
+		gamma.getParam( "alpha" ).set( 0.1 );
 		merge.getParam( "mergingFunction" ).set( 19 );
 		write.getParam( "premult" ).set( false );
 		write.getParam( "filename" ).set( "data/key/output.jpg" );
@@ -192,9 +195,9 @@ int main( int argc, char** argv )
 		g.connect( sourceBd, colorSuppr );
 		g.connect( colorSuppr, invertAlpha );
 		// amélio Alpha
-		g.connect( invertAlpha, normalize );
+		g.connect( invertAlpha, gamma /*normalize*/ );
 
-		g.connect( normalize, merge.getClip("A") );
+		g.connect( /*normalize*/ gamma, merge.getClip("A") );
 		g.connect( backgroundBd, merge.getClip("B") );
 		g.connect( merge, write );
 		g.connect( invertAlpha, writeKey );
