@@ -12,6 +12,7 @@
 #include <ofxsMultiThread.h>
 
 #include <boost/gil/gil_all.hpp>
+#include <boost/lambda/lambda.hpp>
 
 namespace tuttle {
 namespace plugin {
@@ -26,6 +27,9 @@ ImageEffect( handle )
 
 	_paramSize = fetchDouble2DParam( kParamSize );
 	_paramNormalizedKernel = fetchBooleanParam( kParamNormalizedKernel );
+	_paramReverseKernel = fetchBooleanParam( kParamReverseKernel );
+	_paramPass = fetchChoiceParam( kParamPass );
+	_paramKernelEpsilon = fetchDoubleParam( kParamKernelEpsilon );
 	_paramUnidimensional = fetchBooleanParam( kParamUnidimensional );
 	_paramBorder = fetchChoiceParam( kParamBorder );
 	_paramComputeGradientNorm = fetchBooleanParam( kParamComputeGradientNorm );
@@ -40,6 +44,15 @@ SobelProcessParams<SobelPlugin::Scalar> SobelPlugin::getProcessParams( const Ofx
 	SobelProcessParams<Scalar> params;
 
 	params._size   = ofxToGil( _paramSize->getValue() ) * ofxToGil( renderScale  );
+	params._unidimensional = _paramUnidimensional->getValue();
+	params._pass = static_cast<EParamPass>( _paramPass->getValue() );
+
+	params._computeGradientNorm = _paramComputeGradientNorm->getValue();
+	params._gradientNormManhattan = _paramGradientNormManhattan->getValue();
+	params._computeGradientDirection = _paramComputeGradientDirection->getValue();
+	params._gradientDirectionAbs = _paramGradientDirectionAbs->getValue();
+
+
 	params._border = static_cast<EParamBorder>( _paramBorder->getValue() );
 	params._boundary_option = bgil::convolve_option_extend_mirror;
 	switch( params._border )
@@ -59,11 +72,11 @@ SobelProcessParams<SobelPlugin::Scalar> SobelPlugin::getProcessParams( const Ofx
 	}
 
 	bool normalizedKernel = _paramNormalizedKernel->getValue();
+	double kernelEpsilon = _paramKernelEpsilon->getValue();
 
-	params._unidimensional = _paramUnidimensional->getValue();
-	params._xKernelGaussianDerivative = buildGaussianDerivative1DKernel<Scalar>( params._size.x, normalizedKernel );
+	params._xKernelGaussianDerivative = buildGaussianDerivative1DKernel<Scalar>( params._size.x, normalizedKernel, kernelEpsilon );
 	if( ! params._unidimensional )
-		params._xKernelGaussian = buildGaussian1DKernel<Scalar>( params._size.x, normalizedKernel );
+		params._xKernelGaussian = buildGaussian1DKernel<Scalar>( params._size.x, normalizedKernel, kernelEpsilon );
 
 	if( params._size.x == params._size.y )
 	{
@@ -72,22 +85,53 @@ SobelProcessParams<SobelPlugin::Scalar> SobelPlugin::getProcessParams( const Ofx
 	}
 	else
 	{
-		params._yKernelGaussianDerivative = buildGaussianDerivative1DKernel<Scalar>( params._size.y, normalizedKernel );
+		params._yKernelGaussianDerivative = buildGaussianDerivative1DKernel<Scalar>( params._size.y, normalizedKernel, kernelEpsilon );
 		if( ! params._unidimensional )
-			params._yKernelGaussian = buildGaussian1DKernel<Scalar>( params._size.y, normalizedKernel );
+			params._yKernelGaussian = buildGaussian1DKernel<Scalar>( params._size.y, normalizedKernel, kernelEpsilon );
 	}
 
-	params._computeGradientNorm = _paramComputeGradientNorm->getValue();
-	params._gradientNormManhattan = _paramGradientNormManhattan->getValue();
-	params._computeGradientDirection = _paramComputeGradientDirection->getValue();
-	params._gradientDirectionAbs = _paramGradientDirectionAbs->getValue();
-
+	if( _paramReverseKernel->getValue() )
+	{
+		params._xKernelGaussianDerivative = boost::gil::reverse_kernel( params._xKernelGaussianDerivative );
+		params._yKernelGaussianDerivative = boost::gil::reverse_kernel( params._yKernelGaussianDerivative );
+	}
 	return params;
 }
 
-//void SobelPlugin::changedParam( const OFX::InstanceChangedArgs &args, const std::string &paramName )
-//{
-//}
+template< typename Scalar >
+std::ostream& operator<<( std::ostream& os, boost::gil::kernel_1d<Scalar>& kernel )
+{
+	using namespace boost;
+	os << "[";
+	std::for_each( kernel.begin(), kernel.end(), os << lambda::_1 << "," );
+	os << "]";
+	return os;
+}
+
+void SobelPlugin::changedParam( const OFX::InstanceChangedArgs &args, const std::string &paramName )
+{
+    if( paramName == kParamInfos )
+    {
+		SobelProcessParams<Scalar> params = getProcessParams(args.renderScale);
+
+		std::ostringstream infos;
+		infos << "Kernel size for values (" << params._size.x << "x" << params._size.y << ") is:" << std::endl;
+		infos << "  for X (" << params._xKernelGaussian.size() << "x" << params._xKernelGaussianDerivative.size() << ")" << std::endl;
+		infos << "  for Y (" << params._yKernelGaussian.size() << "x" << params._yKernelGaussianDerivative.size() << ")" << std::endl;
+		infos << std::endl;
+		infos << "X :" << std::endl;
+		infos << params._xKernelGaussian << std::endl;
+		infos << params._xKernelGaussianDerivative << std::endl;
+		infos << "Y :" << std::endl;
+		infos << params._yKernelGaussian << std::endl;
+		infos << params._yKernelGaussianDerivative << std::endl;
+		infos << std::endl;
+        
+		sendMessage( OFX::Message::eMessageMessage,
+                     "", // No XML resources
+                     infos.str() );
+    }
+}
 
 bool SobelPlugin::getRegionOfDefinition( const OFX::RegionOfDefinitionArguments& args, OfxRectD& rod )
 {
@@ -114,11 +158,35 @@ void SobelPlugin::getRegionsOfInterest( const OFX::RegionsOfInterestArguments& a
 	SobelProcessParams<Scalar> params = getProcessParams();
 	OfxRectD srcRod                  = _clipSrc->getCanonicalRod( args.time );
 
+	OfxRectD marge;
+	marge.x1 = std::max( params._xKernelGaussianDerivative.left_size(), params._yKernelGaussian.left_size() );
+	marge.y1 = std::max( params._xKernelGaussian.left_size(), params._yKernelGaussianDerivative.left_size() );
+	marge.x2 = std::max( params._xKernelGaussianDerivative.right_size(), params._yKernelGaussian.right_size() );
+	marge.y2 = std::max( params._xKernelGaussian.right_size(), params._yKernelGaussianDerivative.right_size() );
+	switch( params._pass )
+	{
+		case eParamPass1:
+		{
+			marge.y1 = 0;
+			marge.y2 = 0;
+			break;
+		}
+		case eParamPass2:
+		{
+			marge.x1 = 0;
+			marge.x2 = 0;
+			break;
+		}
+		case eParamPassFull:
+		{
+			break;
+		}
+	}
 	OfxRectD srcRoi;
-	srcRoi.x1 = srcRod.x1 - std::max( params._xKernelGaussianDerivative.left_size(), params._yKernelGaussian.left_size() );
-	srcRoi.y1 = srcRod.y1 - std::max( params._xKernelGaussian.left_size(), params._yKernelGaussianDerivative.left_size() );
-	srcRoi.x2 = srcRod.x2 + std::max( params._xKernelGaussianDerivative.right_size(), params._yKernelGaussian.right_size() );
-	srcRoi.y2 = srcRod.y2 + std::max( params._xKernelGaussian.right_size(), params._yKernelGaussianDerivative.right_size() );
+	srcRoi.x1 = srcRod.x1 - marge.x1;
+	srcRoi.y1 = srcRod.y1 - marge.y1;
+	srcRoi.x2 = srcRod.x2 + marge.x2;
+	srcRoi.y2 = srcRod.y2 + marge.y2;
 	rois.setRegionOfInterest( *_clipSrc, srcRoi );
 }
 
@@ -152,18 +220,18 @@ void SobelPlugin::render( const OFX::RenderArguments &args )
     {
         switch( dstBitDepth )
         {
-//            case OFX::eBitDepthUByte :
-//            {
-//                SobelProcess<rgba8_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
-//            case OFX::eBitDepthUShort :
-//            {
-//                SobelProcess<rgba16_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
+            case OFX::eBitDepthUByte :
+            {
+                SobelProcess<rgba8_view_t> p( *this );
+                p.setupAndProcess( args );
+                break;
+            }
+            case OFX::eBitDepthUShort :
+            {
+                SobelProcess<rgba16_view_t> p( *this );
+                p.setupAndProcess( args );
+                break;
+            }
             case OFX::eBitDepthFloat :
             {
                 SobelProcess<rgba32f_view_t> p( *this );

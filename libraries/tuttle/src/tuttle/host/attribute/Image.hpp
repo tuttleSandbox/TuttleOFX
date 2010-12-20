@@ -26,6 +26,7 @@ protected:
 	std::size_t _ncomp; ///< number of components
 	std::size_t _memlen; ///< memory size
 	std::size_t _rowlen; ///< memory size for 1 row
+	std::string _fullname;
 	memory::IPoolDataPtr _data; ///< where we are keeping our image data
 
 public:
@@ -37,6 +38,8 @@ public:
 		_data = pData;
 		setPointerProperty( kOfxImagePropData, getPixelData() );
 	}
+
+	std::string getFullName() const { return _fullname; }
 
 	std::size_t getMemlen() const { return _memlen; }
 	std::size_t getRowlen() const { return _rowlen; }
@@ -74,16 +77,14 @@ private:
 template < class VIEW_T >
 VIEW_T Image::getGilView()
 {
-	COUT_INFOS;
-	COUT_VAR(this);
 	OfxRectI rod = this->getROD();
 	OfxRectI bounds = this->getBounds();
 
-	COUT_VAR( bounds );
-	COUT_VAR( std::abs( bounds.x2 - bounds.x1 ) );
-	COUT_VAR( std::abs( bounds.y2 - bounds.y1 ) );
-	COUT_VAR( this->getPixelData() );
-	COUT_VAR( this->getRowBytes() );
+	TCOUT_VAR( bounds );
+	TCOUT_VAR( std::abs( bounds.x2 - bounds.x1 ) );
+	TCOUT_VAR( std::abs( bounds.y2 - bounds.y1 ) );
+	TCOUT_VAR( this->getPixelData() );
+	TCOUT_VAR( this->getRowBytes() );
 	
 	typedef typename VIEW_T::value_type Pixel;
 	return boost::gil::interleaved_view( std::abs( bounds.x2 - bounds.x1 ),

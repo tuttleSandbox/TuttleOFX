@@ -10,6 +10,7 @@
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/breadth_first_search.hpp>
 #include <boost/foreach.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <iostream>
 #include <vector>
@@ -318,10 +319,10 @@ public:
 //		}
 
 
-//		COUT_X( 80, "." );
-//		COUT( vertex.getName() );
-//		COUT( procOptions );
-//		COUT_X( 80, "." );
+//		TCOUT_X( 80, "." );
+//		TCOUT( vertex.getName() );
+//		TCOUT( procOptions );
+//		TCOUT_X( 80, "." );
 	}
 
 private:
@@ -356,7 +357,12 @@ public:
 		// check if abort ?
 
 		// launch the process
+		boost::posix_time::ptime t1(boost::posix_time::microsec_clock::local_time());
 		vertex.getProcessNode().process( vertex.getProcessDataAtTime() );
+		boost::posix_time::ptime t2(boost::posix_time::microsec_clock::local_time());
+		_cumulativeTime += t2 - t1;
+		
+		TCOUT( "** Process " << quotes(vertex._name) << " " << vertex._data._time << " took: " << t2 - t1 << " (cumul: " << _cumulativeTime << ")" );
 		
 		if( vertex.getProcessDataAtTime()._finalNode )
 		{
@@ -376,6 +382,7 @@ private:
 	TGraph& _graph;
 	memory::IMemoryCache& _cache;
 	memory::IMemoryCache& _result;
+	boost::posix_time::time_duration _cumulativeTime;
 };
 
 template<class TGraph>

@@ -18,6 +18,15 @@ template<typename Scalar>
 struct SobelProcessParams
 {
 	boost::gil::point2<double> _size;
+
+	EParamPass _pass;
+	bool _unidimensional;
+
+	bool _computeGradientNorm;
+	bool _gradientNormManhattan;
+	bool _computeGradientDirection;
+	bool _gradientDirectionAbs;
+
 	EParamBorder _border;
 	boost::gil::convolve_boundary_option _boundary_option;
 
@@ -25,13 +34,6 @@ struct SobelProcessParams
 	boost::gil::kernel_1d<Scalar> _xKernelGaussian;
 	boost::gil::kernel_1d<Scalar> _yKernelGaussianDerivative;
 	boost::gil::kernel_1d<Scalar> _yKernelGaussian;
-
-	bool _unidimensional;
-
-	bool _computeGradientNorm;
-	bool _gradientNormManhattan;
-	bool _computeGradientDirection;
-	bool _gradientDirectionAbs;
 };
 
 /**
@@ -47,7 +49,7 @@ public:
 public:
 	SobelProcessParams<Scalar> getProcessParams( const OfxPointD& renderScale = OFX::kNoRenderScale ) const;
 
-//    void changedParam( const OFX::InstanceChangedArgs &args, const std::string &paramName );
+    void changedParam( const OFX::InstanceChangedArgs &args, const std::string &paramName );
 
 	bool getRegionOfDefinition( const OFX::RegionOfDefinitionArguments& args, OfxRectD& rod );
 	void getRegionsOfInterest( const OFX::RegionsOfInterestArguments& args, OFX::RegionOfInterestSetter& rois );
@@ -63,6 +65,9 @@ public:
 
 	OFX::Double2DParam* _paramSize;
 	OFX::BooleanParam* _paramNormalizedKernel;
+	OFX::BooleanParam* _paramReverseKernel;
+	OFX::ChoiceParam* _paramPass;
+	OFX::DoubleParam* _paramKernelEpsilon;
 	OFX::BooleanParam* _paramUnidimensional;
     OFX::ChoiceParam* _paramBorder;
 	OFX::BooleanParam* _paramComputeGradientNorm;

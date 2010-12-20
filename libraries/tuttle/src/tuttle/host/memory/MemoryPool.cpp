@@ -90,19 +90,19 @@ MemoryPool::~MemoryPool()
 	{
 		COUT_ERROR( "Error inside memory pool. Some data always mark used at the destruction (nb elements:" << _dataUsed.size() << ")" );
 	}
-	COUT_X( 20, "-" );
-	COUT( "~MemoryPool()" );
-	COUT_VAR( _dataUsed.size() );
-	COUT_VAR( _dataUnused.size() );
-	COUT_VAR( _allDatas.size() );
-	COUT_VAR( _memoryAuthorized );
-	COUT( "" );
-	COUT_VAR( getUsedMemorySize() );
-	COUT_VAR( getAllocatedMemorySize() );
-	COUT_VAR( getMaxMemorySize() );
-	COUT_VAR( getAvailableMemorySize() );
-	COUT_VAR( getWastedMemorySize() );
-	COUT_X( 20, "-" );
+	TCOUT_X( 20, "-" );
+	TCOUT( "~MemoryPool()" );
+	TCOUT_VAR( _dataUsed.size() );
+	TCOUT_VAR( _dataUnused.size() );
+	TCOUT_VAR( _allDatas.size() );
+	TCOUT_VAR( _memoryAuthorized );
+	TCOUT( "" );
+	TCOUT_VAR( getUsedMemorySize() );
+	TCOUT_VAR( getAllocatedMemorySize() );
+	TCOUT_VAR( getMaxMemorySize() );
+	TCOUT_VAR( getAvailableMemorySize() );
+	TCOUT_VAR( getWastedMemorySize() );
+	TCOUT_X( 20, "-" );
 }
 
 void MemoryPool::referenced( PoolData* pData )
@@ -186,8 +186,8 @@ boost::intrusive_ptr<IPoolData> MemoryPool::allocate( const std::size_t size )
 std::size_t MemoryPool::updateMemoryAuthorizedWithRAM()
 {
 	_memoryAuthorized = getUsedMemorySize() + getMemoryInfo()._totalRam;
-	COUT_X( 5, " - MEMORYPOOL::updateMemoryAuthorizedWithRAM - " );
-	COUT_VAR( _memoryAuthorized );
+	TCOUT_X( 5, " - MEMORYPOOL::updateMemoryAuthorizedWithRAM - " );
+	TCOUT_VAR( _memoryAuthorized );
 	return _memoryAuthorized;
 }
 
