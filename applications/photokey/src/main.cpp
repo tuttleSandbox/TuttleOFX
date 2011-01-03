@@ -35,9 +35,9 @@ int main( int argc, char** argv )
 	std::set_unexpected( &sam_unexpected );
 	try
 	{
-        float suppR, suppG, suppB, normalizeParam1;
+        float suppR, suppG, suppB, normalizeParam1,paramGamma;
         std::string config_file = "data/key/config.ini";
-        std::string src, bg, frame;
+        std::string src, bg, frame, out;
     
         // Declare a group of options that will be 
         // allowed only on command line
@@ -59,12 +59,16 @@ int main( int argc, char** argv )
                   "blue suppression level [0.0;1.0]")
             ("normalizeParam1,np1", po::value<float>(&normalizeParam1)->default_value(0.4f), 
                   "normalizeParam1 [0.0;1.0]?")
+            ("gamma", po::value<float>(&paramGamma)->default_value(0.1f), 
+                  "normalizeParam1 [0.0;1.0]?")
             ("src", po::value<std::string>(&src)->default_value("data/key/source.jpg"), 
                   "source image path")
             ("bg", po::value<std::string>(&bg)->default_value("data/key/background.jpg"), 
                   "background image path")
             ("frame", po::value<std::string>(&frame)->default_value("data/key/foreground.jpg"), 
                   "foregroung image path")
+            ("out", po::value<std::string>(&out)->default_value("data/key/outpout.jpg"), 
+                  "outpout image path")
             ;
 
         // Hidden options, will be allowed both on command line and
@@ -133,8 +137,8 @@ int main( int argc, char** argv )
 		*/
 		
 		Graph g;
-		Graph::Node& source     = g.createNode( "fr.tuttle.jpegreader" );
-		Graph::Node& cadre      = g.createNode( "fr.tuttle.jpegreader" );
+		Graph::Node& source     = g.createNode( "fr.tuttle.pngreader" );
+		Graph::Node& cadre      = g.createNode( "fr.tuttle.pngreader" );
 		Graph::Node& background = g.createNode( "fr.tuttle.jpegreader" );
 		Graph::Node& sourceBd = g.createNode( "fr.tuttle.bitdepth" );
 		Graph::Node& cadreBd = g.createNode( "fr.tuttle.bitdepth" );
@@ -178,10 +182,10 @@ int main( int argc, char** argv )
 		normalize.getParam( "processB" ).set( false );
 		normalize.getParam( "processA" ).set( true );
 		gamma.getParam( "gammaType" ).set( "RGBA" );
-		gamma.getParam( "alpha" ).set( 0.1 );
+		gamma.getParam( "alpha" ).set( paramGamma );
 		merge.getParam( "mergingFunction" ).set( 19 );
 		write.getParam( "premult" ).set( false );
-		write.getParam( "filename" ).set( "data/key/output.jpg" );
+		write.getParam( "filename" ).set( out );
 		writeKey.getParam( "premult" ).set( false );
 		writeKey.getParam( "filename" ).set( "data/key/outputKey.jpg" );
 		
