@@ -2,11 +2,6 @@
 #include "BlurProcess.hpp"
 #include "BlurDefinitions.hpp"
 
-#include <tuttle/common/utils/global.hpp>
-#include <tuttle/plugin/image/ofxToGil.hpp>
-
-#include <ofxsImageEffect.h>
-#include <ofxsMultiThread.h>
 #include <boost/gil/gil_all.hpp>
 
 namespace tuttle {
@@ -14,25 +9,27 @@ namespace plugin {
 namespace blur {
 
 BlurPlugin::BlurPlugin( OfxImageEffectHandle handle )
-	: ImageEffect( handle )
+	: ImageEffectGilPlugin( handle )
 {
-	_clipSrc = fetchClip( kOfxImageEffectSimpleSourceClipName );
-	_clipDst = fetchClip( kOfxImageEffectOutputClipName );
-
 	_paramSize   = fetchDouble2DParam( kParamSize );
 	_paramBorder = fetchChoiceParam( kParamBorder );
+	_paramNormalizedKernel = fetchBooleanParam( kParamNormalizedKernel );
+	_paramKernelEpsilon = fetchDoubleParam( kParamKernelEpsilon );
 }
 
 BlurProcessParams<BlurPlugin::Scalar> BlurPlugin::getProcessParams( const OfxPointD& renderScale ) const
 {
+	namespace bgil = boost::gil;
+
 	BlurProcessParams<Scalar> params;
 	params._size   = ofxToGil( _paramSize->getValue() ) * ofxToGil( renderScale  );
 	params._border = static_cast<EParamBorder>( _paramBorder->getValue() );
 
-	//	COUT_X(80, "X");
-	params._gilKernelX = buildGaussian1DKernel<Scalar>( params._size.x );
-	//	COUT_X(80, "Y");
-	params._gilKernelY = buildGaussian1DKernel<Scalar>( params._size.y );
+	bool normalizedKernel = _paramNormalizedKernel->getValue();
+	double kernelEpsilon = _paramKernelEpsilon->getValue();
+
+	params._gilKernelX = buildGaussian1DKernel<Scalar>( params._size.x, normalizedKernel, kernelEpsilon );
+	params._gilKernelY = buildGaussian1DKernel<Scalar>( params._size.y, normalizedKernel, kernelEpsilon );
 	
 	params._boundary_option = bgil::convolve_option_extend_mirror;
 	switch( params._border )
@@ -115,74 +112,7 @@ bool BlurPlugin::isIdentity( const OFX::RenderArguments& args, OFX::Clip*& ident
  */
 void BlurPlugin::render( const OFX::RenderArguments& args )
 {
-	using namespace boost::gil;
-	// instantiate the render code based on the pixel depth of the dst clip
-	OFX::EBitDepth dstBitDepth         = _clipDst->getPixelDepth();
-	OFX::EPixelComponent dstComponents = _clipDst->getPixelComponents();
-
-	// do the rendering
-	if( dstComponents == OFX::ePixelComponentRGBA )
-	{
-		switch( dstBitDepth )
-		{
-			case OFX::eBitDepthUByte:
-			{
-				BlurProcess<rgba8_view_t> p( *this );
-				p.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthUShort:
-			{
-				BlurProcess<rgba16_view_t> p( *this );
-				p.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthFloat:
-			{
-				BlurProcess<rgba32f_view_t> p( *this );
-				p.setupAndProcess( args );
-				break;
-			}
-			default:
-			{
-				COUT_ERROR( "Bit depth (" << mapBitDepthEnumToString( dstBitDepth ) << ") not recognized by the plugin." );
-				break;
-			}
-		}
-	}
-	else if( dstComponents == OFX::ePixelComponentAlpha )
-	{
-		switch( dstBitDepth )
-		{
-			case OFX::eBitDepthUByte:
-			{
-				BlurProcess<gray8_view_t> p( *this );
-				p.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthUShort:
-			{
-				BlurProcess<gray16_view_t> p( *this );
-				p.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthFloat:
-			{
-				BlurProcess<gray32f_view_t> p( *this );
-				p.setupAndProcess( args );
-				break;
-			}
-			default:
-			{
-				COUT_ERROR( "Bit depth (" << mapBitDepthEnumToString( dstBitDepth ) << ") not recognized by the plugin." );
-				break;
-			}
-		}
-	}
-	else
-	{
-		COUT_ERROR( "Pixel components (" << mapPixelComponentEnumToString( dstComponents ) << ") not supported by the plugin." );
-	}
+	doGilRender<BlurProcess>( *this, args );
 }
 
 }

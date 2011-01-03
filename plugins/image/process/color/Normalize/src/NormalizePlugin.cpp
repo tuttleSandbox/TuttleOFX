@@ -3,28 +3,21 @@
 #include "NormalizeDefinitions.hpp"
 #include "NormalizeAlgorithm.hpp"
 
-#include <tuttle/common/utils/global.hpp>
 #include <tuttle/plugin/NoProgress.hpp>
-#include <tuttle/plugin/image/ofxToGil.hpp>
 #include <tuttle/plugin/param/gilColor.hpp>
 
-#include <ofxsImageEffect.h>
-#include <ofxsMultiThread.h>
-#include <boost/gil/gil_all.hpp>
+#include <boost/gil/extension/color/convert.hpp>
 #include <boost/gil/extension/numeric/pixel_numeric_operations.hpp>
-#include <boost/gil/extension/numeric/pixel_numeric_operations2.hpp>
+#include <boost/gil/extension/numeric/pixel_numeric_operations_assign.hpp>
+#include <boost/gil/gil_all.hpp>
 
 namespace tuttle {
 namespace plugin {
 namespace normalize {
 
-
-NormalizePlugin::NormalizePlugin( OfxImageEffectHandle handle ) :
-ImageEffect( handle )
+NormalizePlugin::NormalizePlugin( OfxImageEffectHandle handle )
+: ImageEffectGilPlugin( handle )
 {
-    _clipSrc = fetchClip( kOfxImageEffectSimpleSourceClipName );
-    _clipDst = fetchClip( kOfxImageEffectOutputClipName );
-
 	_mode = fetchChoiceParam( kParamMode );
 	_analyseMode = fetchChoiceParam( kParamAnalyseMode );
 	_analyseNow = fetchPushButtonParam( kParamAnalyseNow );
@@ -95,29 +88,75 @@ void NormalizePlugin::changedParam( const OFX::InstanceChangedArgs &args, const 
 		if( ! _clipSrc->isConnected() )
 			return;
 
-		switch( _clipSrc->getPixelDepth() )
-		{
-			case OFX::eBitDepthFloat:
-			{
-				typedef rgba32f_view_t View;
-				typedef View::value_type Pixel;
-				boost::scoped_ptr<OFX::Image> src( _clipSrc->fetchImage( args.time ) );
-				if( ! src.get() )
-					BOOST_THROW_EXCEPTION( exception::ImageNotReady() );
-				if( src->getRowBytes() <= 0 )
-					BOOST_THROW_EXCEPTION( exception::WrongRowBytes() );
-				OfxRectI srcPixelRod = _clipSrc->getPixelRod( args.time, args.renderScale );
-				View srcView = getView<View>( src.get(), srcPixelRod );
+		boost::scoped_ptr<OFX::Image> src( _clipSrc->fetchImage( args.time ) );
+		if( ! src.get() )
+			BOOST_THROW_EXCEPTION( exception::ImageNotReady() );
+		if( src->getRowBytes() <= 0 )
+			BOOST_THROW_EXCEPTION( exception::WrongRowBytes() );
+		OfxRectI srcPixelRod = _clipSrc->getPixelRod( args.time, args.renderScale );
 
-				Pixel smin;
-				Pixel smax;
-				NoProgress progress;
-				analyseInputMinMax<View>( srcView, static_cast<EParamAnalyseMode>( _analyseMode->getValue() ), smin, smax, progress );
-				setRGBAParamValues( _srcMinColor, smin );
-				setRGBAParamValues( _srcMaxColor, smax );
+		EParamAnalyseMode mode = static_cast<EParamAnalyseMode>( _analyseMode->getValue() );
+		NoProgress progress;
+		rgba32f_pixel_t min, max;
+
+		switch( _clipSrc->getPixelComponents() )
+		{
+			case OFX::ePixelComponentRGBA:
+			{
+				switch( _clipSrc->getPixelDepth() )
+				{
+					case OFX::eBitDepthFloat:
+					{
+						typedef rgba32f_view_t View;
+						typedef View::value_type Pixel;
+						View srcView = getView<View>( src.get(), srcPixelRod );
+						analyseInputMinMax<View>( srcView, mode, min, max, progress );
+						break;
+					}
+					case OFX::eBitDepthUShort:
+					{
+						typedef rgba16_view_t View;
+						typedef View::value_type Pixel;
+						View srcView = getView<View>( src.get(), srcPixelRod );
+						Pixel smin, smax;
+						analyseInputMinMax<View>( srcView, mode, smin, smax, progress );
+						color_convert(smin, min);
+						color_convert(smax, max);
+						break;
+					}
+					case OFX::eBitDepthUByte:
+					{
+						typedef rgba8_view_t View;
+						typedef View::value_type Pixel;
+						View srcView = getView<View>( src.get(), srcPixelRod );
+						Pixel smin, smax;
+						analyseInputMinMax<View>( srcView, mode, smin, smax, progress );
+						color_convert(smin, min);
+						color_convert(smax, max);
+						break;
+					}
+					case OFX::eBitDepthNone:
+					case OFX::eBitDepthCustom:
+					{
+						BOOST_THROW_EXCEPTION( exception::Unsupported() );
+					}
+				}
 				break;
 			}
+			case OFX::ePixelComponentRGB:
+			{
+			}
+			case OFX::ePixelComponentAlpha:
+			{
+			}
+			case OFX::ePixelComponentCustom:
+			case OFX::ePixelComponentNone:
+			{
+				BOOST_THROW_EXCEPTION( exception::Unsupported() );
+			}
 		}
+		setRGBAParamValues( _srcMinColor, min );
+		setRGBAParamValues( _srcMaxColor, max );
 
 	}
 }
@@ -165,72 +204,42 @@ void NormalizePlugin::render( const OFX::RenderArguments &args )
 {
 	using namespace boost::gil;
     // instantiate the render code based on the pixel depth of the dst clip
-    OFX::EBitDepth dstBitDepth = _clipDst->getPixelDepth( );
-    OFX::EPixelComponent dstComponents = _clipDst->getPixelComponents( );
+    OFX::EBitDepth bitDepth = _clipDst->getPixelDepth( );
+    OFX::EPixelComponent components = _clipDst->getPixelComponents( );
 
     // do the rendering
-    if( dstComponents == OFX::ePixelComponentRGBA )
-    {
-        switch( dstBitDepth )
-        {
-//            case OFX::eBitDepthUByte :
-//            {
-//                NormalizeProcess<rgba8_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
-//            case OFX::eBitDepthUShort :
-//            {
-//                NormalizeProcess<rgba16_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
-            case OFX::eBitDepthFloat :
-            {
-                NormalizeProcess<rgba32f_view_t> p( *this );
-                p.setupAndProcess( args );
-                break;
-            }
-			default:
-			{
-				COUT_ERROR( "Bit depth (" << mapBitDepthEnumToString(dstBitDepth) << ") not recognized by the plugin." );
-				break;
-			}
-        }
-    }
-    else if( dstComponents == OFX::ePixelComponentAlpha )
-    {
-        switch( dstBitDepth )
-        {
-//            case OFX::eBitDepthUByte :
-//            {
-//                NormalizeProcess<gray8_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
-//            case OFX::eBitDepthUShort :
-//            {
-//                NormalizeProcess<gray16_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
-//            case OFX::eBitDepthFloat :
-//            {
-//                NormalizeProcess<gray32f_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
-			default:
-			{
-				COUT_ERROR( "Bit depth (" << mapBitDepthEnumToString(dstBitDepth) << ") not recognized by the plugin." );
-				break;
-			}
-        }
-    }
-	else
+	switch( components )
 	{
-		COUT_ERROR( "Pixel components (" << mapPixelComponentEnumToString(dstComponents) << ") not supported by the plugin." );
+		case OFX::ePixelComponentRGBA:
+		{
+			switch( bitDepth )
+			{
+				case OFX::eBitDepthFloat:
+				{
+					doGilRender<NormalizeProcess, false, rgba_layout_t, bits32f>( *this, args );
+					return;
+				}
+				case OFX::eBitDepthUByte:
+				case OFX::eBitDepthUShort:
+				case OFX::eBitDepthCustom:
+				case OFX::eBitDepthNone:
+				{
+					BOOST_THROW_EXCEPTION( exception::Unsupported()
+						<< exception::user() + "Bit depth (" + mapBitDepthEnumToString(bitDepth) + ") not recognized by the plugin." );
+				}
+			}
+			break;
+		}
+		case OFX::ePixelComponentRGB:
+		case OFX::ePixelComponentAlpha:
+		case OFX::ePixelComponentCustom:
+		case OFX::ePixelComponentNone:
+		{
+			BOOST_THROW_EXCEPTION( exception::Unsupported()
+				<< exception::user() + "Pixel components (" + mapPixelComponentEnumToString(components) + ") not supported by the plugin." );
+		}
 	}
+	BOOST_THROW_EXCEPTION( exception::Unknown() );
 }
 
 

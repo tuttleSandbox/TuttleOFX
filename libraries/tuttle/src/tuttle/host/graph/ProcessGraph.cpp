@@ -139,7 +139,7 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 
 	// Initialize variables
 	OfxPointD renderScale = { 1.0, 1.0 };
-	OfxRectD renderWindow = { 0, 0, 0, 0 };
+//	OfxRectD renderWindow = { 0, 0, 0, 0 };
 
 	//--- BEGIN RENDER
 	ProcessVertexData defaultOptions;
@@ -174,7 +174,7 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 		if( ! v.isFake() )
 		{
 			v.setProcessData( defaultOptions );
-			v.getProcessNode().setData( &v._data );
+			v.getProcessNode().setProcessData( &v._data );
 		}
 	}
 
@@ -265,7 +265,7 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 			ProcessVertexAtTime& v = renderGraphAtTime.instance(vd);
 			if( ! v.isFake() )
 			{
-				v.getProcessNode().setData( &v._data );
+				v.getProcessNode().setProcessData( &v._data );
 			}
 		}
 
@@ -335,30 +335,30 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 			}
 
 			Vertex& v = renderGraph.instance(vd);
-			COUT_X( 30, "-" );
+			TCOUT_X( 30, "-" );
 			std::size_t i = 0;
-			COUT( "before sort edges of " << v.getName() );
+			TCOUT( "before sort edges of " << v.getName() );
 			BOOST_FOREACH( InternalGraphImpl::edge_descriptor ed, boost::out_edges( vd, renderGraph.getGraph() ) )
 			{
 				Edge& e = renderGraph.instance(ed);
 				e._localId = i++;
 				e._name += " -- ";
 				e._name += boost::lexical_cast<std::string>(e._localId); // tmp
-				COUT( e.getName() << " - " <<  renderGraph.targetInstance(ed).getProcessDataAtTime()._globalInfos._memory  );
+				TCOUT( e.getName() << " - " <<  renderGraph.targetInstance(ed).getProcessDataAtTime()._globalInfos._memory  );
 			}
 			std::sort( edges.begin(), edges.end(), SortEdgeByMemorySize<InternalGraphImpl>(renderGraph) );
-			COUT( "after sort edges of " << v.getName() );
+			TCOUT( "after sort edges of " << v.getName() );
 			BOOST_FOREACH( InternalGraphImpl::edge_descriptor ed, boost::out_edges( vd, renderGraph.getGraph() ) )
 			{
 				Edge& e = renderGraph.instance(ed);
-				COUT( e.getName() << " - " <<  renderGraph.targetInstance(ed).getProcessDataAtTime()._globalInfos._memory );
+				TCOUT( e.getName() << " - " <<  renderGraph.targetInstance(ed).getProcessDataAtTime()._globalInfos._memory );
 			}
 			InternalGraphImpl::out_edge_iterator oe_it, oe_itEnd;
 			boost::tie( oe_it, oe_itEnd ) = boost::out_edges( vd, renderGraph.getGraph() );
 			for( ; oe_it != oe_itEnd; ++oe_it )
 			{
 				Edge& e = renderGraph.instance(*oe_it);
-				COUT( e.getName() << " - " <<  renderGraph.targetInstance(*oe_it).getProcessDataAtTime()._globalInfos._memory );
+				TCOUT( e.getName() << " - " <<  renderGraph.targetInstance(*oe_it).getProcessDataAtTime()._globalInfos._memory );
 			}
 		}
 #ifndef TUTTLE_PRODUCTION

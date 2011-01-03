@@ -1,4 +1,5 @@
 #include "Graph.hpp"
+#include "InputBufferNode.hpp"
 #include "graph/ProcessGraph.hpp"
 #include <tuttle/host/ofx/OfxhImageEffectPlugin.hpp>
 #include <tuttle/host/ofx/OfxhImageEffectNode.hpp>
@@ -18,6 +19,24 @@ Graph::Graph()
 
 Graph::~Graph()
 {}
+
+InputBufferNode& Graph::createInputBuffer()
+{
+	InputBufferNode* node = new InputBufferNode();
+//	if( !node )
+//		BOOST_THROW_EXCEPTION( exception::Logic()
+//		    << exception::user( "Plugin not found (" + id + ")." ) );
+
+	std::stringstream uniqueName;
+	uniqueName << node->getLabel() << ++_instanceCount[node->getLabel()];
+	node->setName( uniqueName.str() );
+
+	std::string key( node->getName() ); // for constness
+	_nodes.insert( key, node );
+	addToGraph( *node );
+
+	return *node;
+}
 
 Graph::Node& Graph::createNode( const std::string& id )
 {
@@ -175,9 +194,7 @@ memory::MemoryCache Graph::compute( const std::list<std::string>& nodes, const i
 	graph::exportAsDOT( "graph.dot", _graph );
 #endif
 	
-	COUT( "ProcessGraph constructor" );
 	graph::ProcessGraph process( *this, nodes );
-	COUT( "ProcessGraph process" );
 	return process.process( tBegin, tEnd );
 }
 
@@ -188,8 +205,15 @@ std::list<Graph::Node*> Graph::getNodesByContext( const std::string& context )
 	     it != itEnd;
 	     ++it )
 	{
-		if( it->second->getContext() == context )
-			selectedNodes.push_back( it->second );
+		try
+		{
+			ImageEffectNode& ie = dynamic_cast<ImageEffectNode&>(*it->second);
+			if( ie.getContext() == context )
+				selectedNodes.push_back( &ie );
+		}
+		catch(...)
+		{
+		}
 	}
 	return selectedNodes;
 }
@@ -201,8 +225,11 @@ std::list<Graph::Node*> Graph::getNodesByPlugin( const std::string& pluginId )
 	     it != itEnd;
 	     ++it )
 	{
-		if( boost::iequals( it->second->getPlugin().getIdentifier(), pluginId ) )
-			selectedNodes.push_back( it->second );
+		/// @todo tuttle: use INode here !
+		ImageEffectNode& ie = dynamic_cast<ImageEffectNode&>(*it->second);
+
+		if( boost::iequals( ie.getPlugin().getIdentifier(), pluginId ) )
+			selectedNodes.push_back( &ie );
 	}
 	return selectedNodes;
 }

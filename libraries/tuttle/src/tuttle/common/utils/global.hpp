@@ -1,5 +1,5 @@
-#ifndef __TUTTLE_GLOBAL__
-#define __TUTTLE_GLOBAL__
+#ifndef _TUTTLE_COMMON_UTILS_GLOBAL_HPP_
+#define _TUTTLE_COMMON_UTILS_GLOBAL_HPP_
 
 //#define TUTTLE_NO_COUT
 
@@ -29,20 +29,16 @@ namespace std {
 // Define functions to display infos in the console
 #include <iostream>
 
-#ifdef _DEBUG
- #    define TUTTLE_FORCEINLINE inline
+#ifdef NDEBUG
+#  if defined( _MSC_VER )
+#    define TUTTLE_FORCEINLINE __forceinline
+#  elif defined( __GNUC__ ) && __GNUC__ > 3
+#    define TUTTLE_FORCEINLINE inline __attribute__ ( ( always_inline ) )
+#  else
+#    define TUTTLE_FORCEINLINE inline
+#  endif
 #else
- #ifdef NDEBUG
-  #if   defined( _MSC_VER )
-   #    define TUTTLE_FORCEINLINE __forceinline
-  #elif defined( __GNUC__ ) && __GNUC__ > 3
-   #    define TUTTLE_FORCEINLINE inline __attribute__ ( ( always_inline ) )
-  #else
-   #    define TUTTLE_FORCEINLINE inline
-  #endif
- #else
-  #    define TUTTLE_FORCEINLINE inline
- #endif
+#  define TUTTLE_FORCEINLINE inline
 #endif
 
 #ifndef COUT
@@ -122,15 +118,28 @@ namespace std {
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////
-
-#define TCOUT COUT
-#define TCOUT_X COUT_X
-#define TCOUT_VAR COUT_VAR
-#define TCOUT_VAR2 COUT_VAR2
-#define TCOUT_VAR3 COUT_VAR3
-#define TCOUT_VAR4 COUT_VAR4
-#define TCOUT_INFOS COUT_INFOS
-#define TCOUT_WITHINFOS COUT_WITHINFOS
-#define TCOUT_EXCEPTION COUT_EXCEPTION
+// TCOUT* defines are used by developpers for temporary displays during development stages.
+// They are removed in production mode.
+#ifndef TUTTLE_PRODUCTION
+	#define TCOUT COUT
+	#define TCOUT_X COUT_X
+	#define TCOUT_VAR COUT_VAR
+	#define TCOUT_VAR2 COUT_VAR2
+	#define TCOUT_VAR3 COUT_VAR3
+	#define TCOUT_VAR4 COUT_VAR4
+	#define TCOUT_INFOS COUT_INFOS
+	#define TCOUT_WITHINFOS COUT_WITHINFOS
+	#define TCOUT_EXCEPTION COUT_EXCEPTION
+#else
+	#define TCOUT COUT_DEBUG
+	#define TCOUT_X COUT_X_DEBUG
+	#define TCOUT_VAR COUT_VAR_DEBUG
+	#define TCOUT_VAR2 COUT_VAR2_DEBUG
+	#define TCOUT_VAR3 COUT_VAR3_DEBUG
+	#define TCOUT_VAR4 COUT_VAR4_DEBUG
+	#define TCOUT_INFOS COUT_INFOS_DEBUG
+	#define TCOUT_WITHINFOS COUT_WITHINFOS_DEBUG
+	#define TCOUT_EXCEPTION COUT_EXCEPTION_DEBUG
+#endif
 
 #endif

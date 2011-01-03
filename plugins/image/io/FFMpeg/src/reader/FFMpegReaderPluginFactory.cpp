@@ -28,11 +28,11 @@ void FFMpegReaderPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 	desc.addSupportedBitDepth( OFX::eBitDepthUShort );
 	desc.addSupportedBitDepth( OFX::eBitDepthFloat );
 
-	desc.setSupportsMultipleClipDepths( true );
-
 	// plugin flags
+	desc.setRenderThreadSafety( OFX::eRenderInstanceSafe );
 	desc.setHostFrameThreading( false );
 	desc.setSupportsMultiResolution( false );
+	desc.setSupportsMultipleClipDepths( true );
 	desc.setSupportsTiles( kSupportTiles );
 }
 
@@ -48,6 +48,7 @@ void FFMpegReaderPluginFactory::describeInContext( OFX::ImageEffectDescriptor& d
 	OFX::ClipDescriptor* dstClip = desc.defineClip( kOfxImageEffectOutputClipName );
 
 	dstClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	dstClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	dstClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	dstClip->setSupportsTiles( kSupportTiles );
 

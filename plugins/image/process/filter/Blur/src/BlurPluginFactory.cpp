@@ -18,8 +18,8 @@ static const bool kSupportTiles = true;
  */
 void BlurPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 {
-	desc.setLabels( "TuttleBlur", "TuttleBlur",
-	                "TuttleBlur" );
+	desc.setLabels( "TuttleBlur", "Blur",
+	                "Blur" );
 	desc.setPluginGrouping( "tuttle/image/process/filter" );
 
 	// add the supported contexts, only filter at the moment
@@ -27,12 +27,13 @@ void BlurPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 	desc.addSupportedContext( OFX::eContextGeneral );
 
 	// add supported pixel depths
-	//	desc.addSupportedBitDepth( OFX::eBitDepthUByte );
-	//	desc.addSupportedBitDepth( OFX::eBitDepthUShort );
+	desc.addSupportedBitDepth( OFX::eBitDepthUByte );
+	desc.addSupportedBitDepth( OFX::eBitDepthUShort );
 	desc.addSupportedBitDepth( OFX::eBitDepthFloat );
 
 	// plugin flags
 	desc.setSupportsTiles( kSupportTiles );
+	desc.setRenderThreadSafety( OFX::eRenderFullySafe );
 }
 
 /**
@@ -46,12 +47,14 @@ void BlurPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 	OFX::ClipDescriptor* srcClip = desc.defineClip( kOfxImageEffectSimpleSourceClipName );
 
 	srcClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	srcClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	srcClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	srcClip->setSupportsTiles( kSupportTiles );
 
 	// Create the mandated output clip
 	OFX::ClipDescriptor* dstClip = desc.defineClip( kOfxImageEffectOutputClipName );
 	dstClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	dstClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	dstClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	dstClip->setSupportsTiles( kSupportTiles );
 
@@ -68,6 +71,23 @@ void BlurPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 	border->appendOption( kParamBorderConstant );
 	border->appendOption( kParamBorderBlack );
 	border->appendOption( kParamBorderPadded );
+
+
+	OFX::GroupParamDescriptor* advanced = desc.defineGroupParam( kParamGroupAdvanced );
+	advanced->setLabel( "Advanced" );
+
+	OFX::BooleanParamDescriptor* normalizedKernel = desc.defineBooleanParam( kParamNormalizedKernel );
+	normalizedKernel->setLabel( "Normalized kernel" );
+	normalizedKernel->setHint( "Use a normalized kernel to compute the gradient." );
+	normalizedKernel->setDefault( true );
+	normalizedKernel->setParent( advanced );
+
+	OFX::DoubleParamDescriptor* kernelEpsilon = desc.defineDoubleParam( kParamKernelEpsilon );
+	kernelEpsilon->setLabel( "Kernel espilon value" );
+	kernelEpsilon->setHint( "Threshold at which we no longer consider the values of the function." );
+	kernelEpsilon->setDefault( 0.01 );
+	kernelEpsilon->setDisplayRange( 0, 0.01 );
+	kernelEpsilon->setParent( advanced );
 }
 
 /**

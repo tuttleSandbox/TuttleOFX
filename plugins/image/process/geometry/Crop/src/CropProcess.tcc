@@ -1,23 +1,20 @@
-#include <tuttle/common/utils/global.hpp>
+#include <tuttle/plugin/global.hpp>
 #include <tuttle/common/math/rectOp.hpp>
 #include <tuttle/plugin/ImageGilProcessor.hpp>
 #include <tuttle/plugin/exceptions.hpp>
 #include <tuttle/plugin/image/gil/globals.hpp>
+#include <tuttle/plugin/image/gil/basic_colors.hpp>
 
-#include <cmath>
-#include <vector>
-#include <ofxsImageEffect.h>
-#include <ofxsMultiThread.h>
 #include <boost/gil/gil_all.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <boost/gil/extension/numeric/sampler.hpp>
 #include <boost/gil/extension/numeric/resample.hpp>
 
-using namespace boost::gil;
 
 namespace tuttle {
 namespace plugin {
 namespace crop {
+
+using namespace boost::gil;
 
 template<class View>
 CropProcess<View>::CropProcess( CropPlugin& instance )
@@ -41,10 +38,10 @@ void CropProcess<View>::setup( const OFX::RenderArguments& args )
 
 	// SOURCE
 	_renderScale = this->_src->getRenderScale();
-	_par         = _plugin.getSrcClip()->getPixelAspectRatio();
+	_par         = _plugin._clipSrc->getPixelAspectRatio();
 	_srcBounds   = this->_src->getBounds();
 	_srcROD      = this->_src->getRegionOfDefinition();
-	_clipROD     = _plugin.getSrcClip()->getCanonicalRod( args.time );
+	_clipROD     = _plugin._clipSrc->getCanonicalRod( args.time );
 	_clipROD.x1 /= _par / this->_src->getRenderScale().x;
 	_clipROD.x2 /= _par / this->_src->getRenderScale().x;
 	_clipROD.y1 *= this->_src->getRenderScale().y;
@@ -67,7 +64,7 @@ void CropProcess<View>::setup( const OFX::RenderArguments& args )
 		OfxRectD finalProcWin = rectanglesIntersection( croppedRect, dProcRenderRect );
 		if( finalProcWin.x1 < finalProcWin.x2 && finalProcWin.y1 < finalProcWin.y2 )
 		{
-			View srcTileView = this->getView( this->_src.get(), _plugin.getSrcClip()->getPixelRod( args.time ) );
+			View srcTileView = this->getView( this->_src.get(), _plugin._clipSrc->getPixelRod( args.time ) );
 			imResized.recreate( int(finalProcWin.x2 - finalProcWin.x1), ///@todo tuttle: to change !
 			                    int(finalProcWin.y2 - finalProcWin.y1) );
 			resize_view( srcTileView, view( imResized ), bilinear_sampler() );
@@ -82,7 +79,7 @@ void CropProcess<View>::setup( const OFX::RenderArguments& args )
 	// DESTINATION
 	OfxRectI dstImgRod    = this->_dst->getRegionOfDefinition();
 	OfxRectI dstImgBounds = this->_dst->getBounds();
-	OfxRectD dstClipROD   = _plugin.getDstClip()->getCanonicalRod( args.time );
+	OfxRectD dstClipROD   = _plugin._clipDst->getCanonicalRod( args.time );
 	dstClipROD.x1 /= _par / this->_src->getRenderScale().x;
 	dstClipROD.x2 /= _par / this->_src->getRenderScale().x;
 	dstClipROD.y1 *= this->_src->getRenderScale().y;
@@ -101,7 +98,7 @@ void CropProcess<View>::setup( const OFX::RenderArguments& args )
 	}
 
 	// Build destination view
-	View dstTileView = this->getView( this->_dst.get(), _plugin.getDstClip()->getPixelRod( args.time ) );
+	View dstTileView = this->getView( this->_dst.get(), _plugin._clipDst->getPixelRod( args.time ) );
 
 	this->_dstView = subimage_view( dstTileView, dstImgCorner.x, dstImgCorner.y,
 	                                int(dstClipROD.x2 - dstClipROD.x1),

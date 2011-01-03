@@ -1,11 +1,9 @@
 #ifndef _TUTTLE_PLUGIN_GAMMA_PLUGIN_HPP_
 #define _TUTTLE_PLUGIN_GAMMA_PLUGIN_HPP_
 
-#include <tuttle/common/utils/global.hpp>
-#include <ofxsImageEffect.h>
-#include <boost/gil/gil_all.hpp>
-
 #include "GammaDefinitions.hpp"
+
+#include <tuttle/plugin/ImageEffectGilPlugin.hpp>
 
 namespace tuttle {
 namespace plugin {
@@ -23,7 +21,7 @@ struct GammaProcessParams
 /**
  * @brief Gamma plugin
  */
-class GammaPlugin : public OFX::ImageEffect
+class GammaPlugin : public ImageEffectGilPlugin
 {
 public:
 	typedef float Scalar;
@@ -38,9 +36,6 @@ public:
 	GammaProcessParams<Scalar> getProcessParams( const OfxPointD& renderScale = OFX::kNoRenderScale ) const;
 
 public:
-	// do not need to delete these, the ImageEffect is managing them for us
-	OFX::Clip* _clipSrc; ///< Source image clip
-	OFX::Clip* _clipDst; ///< Destination image clip
 	OFX::ChoiceParam* _gammaType;
 	OFX::DoubleParam* _master;
 	OFX::DoubleParam* _red;

@@ -1,11 +1,13 @@
-#ifndef GIL_FUNCTORS_HPP
-#define GIL_FUNCTORS_HPP
+#ifndef _BOOST_GIL_MERGEFUNCTORS_HPP_
+#define _BOOST_GIL_MERGEFUNCTORS_HPP_
 
-#include <boost/gil/extension/toolbox/hsl.hpp>
-#include "ViewsMerging.hpp"
+#include "MergeAbstractFunctor.hpp"
 
+#include <boost/gil/color_convert.hpp>
+#include <boost/gil/extension/color/hsl.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/type_traits/is_signed.hpp>
+
 #include <cmath>
 
 namespace boost {
@@ -36,20 +38,20 @@ bool is_negative( const Channel& v )
 
 template <typename Pixel>
 struct FunctorAverage
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	template<typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& dst )
 	{
 		// (A + B) / 2
-		dst = (Channel)( ( A + B ) / 2 );
+		dst = (Channel)( ( A + B ) * 0.5 );
 	}
 
 };
 
 template <typename Pixel>
 struct FunctorPlus
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	template <typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& dst )
@@ -62,7 +64,7 @@ struct FunctorPlus
 
 template <typename Pixel>
 struct FunctorCopy
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	template <typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& dst )
@@ -75,7 +77,7 @@ struct FunctorCopy
 
 template <typename Pixel>
 struct FunctorDifference
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	template <typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& dst )
@@ -88,7 +90,7 @@ struct FunctorDifference
 
 template <typename Pixel>
 struct FunctorDivide
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -107,7 +109,7 @@ struct FunctorDivide
 
 template <typename Pixel>
 struct FunctorExclusion
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -123,7 +125,7 @@ struct FunctorExclusion
 
 template <typename Pixel>
 struct FunctorFrom
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	template <typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& dst )
@@ -135,7 +137,7 @@ struct FunctorFrom
 
 template <typename Pixel>
 struct FunctorGeometric
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -151,7 +153,7 @@ struct FunctorGeometric
 
 template <typename Pixel>
 struct FunctorMultiply
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	template <typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& dst )
@@ -168,7 +170,7 @@ struct FunctorMultiply
 
 template <typename Pixel>
 struct FunctorScreen
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -184,7 +186,7 @@ struct FunctorScreen
 
 template <typename Pixel>
 struct FunctorHardLight
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -207,7 +209,7 @@ struct FunctorHardLight
 
 template <typename Pixel>
 struct FunctorHypot
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -223,7 +225,7 @@ struct FunctorHypot
 
 template <typename Pixel>
 struct FunctorMinus
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	template <typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& dst )
@@ -235,7 +237,7 @@ struct FunctorMinus
 
 template <typename Pixel>
 struct FunctorDarken
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	template <typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& dst )
@@ -247,7 +249,7 @@ struct FunctorDarken
 
 template <typename Pixel>
 struct FunctorLighten
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	template <typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& dst )
@@ -259,7 +261,7 @@ struct FunctorLighten
 
 template <typename Pixel>
 struct FunctorOverlay
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -281,7 +283,7 @@ struct FunctorOverlay
 
 template <typename Pixel>
 struct FunctorColorDodge
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -305,7 +307,7 @@ struct FunctorColorDodge
 
 template <typename Pixel>
 struct FunctorColorBurn
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -329,7 +331,7 @@ struct FunctorColorBurn
 
 template <typename Pixel>
 struct FunctorPinLight
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -347,7 +349,7 @@ struct FunctorPinLight
 // Quadratic mode: reflect
 template <typename Pixel>
 struct FunctorReflect
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -372,7 +374,7 @@ struct FunctorReflect
 // Quadratic mode: freeze
 template <typename Pixel>
 struct FunctorFreeze
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -397,7 +399,7 @@ struct FunctorFreeze
 // Similar to average, but smoother...
 template <typename Pixel>
 struct FunctorInterpolated
-	: public boost::gil::merge_functor<Pixel, fun_op_no_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel>
 {
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
@@ -423,27 +425,28 @@ struct FunctorInterpolated
 
 template <typename Pixel>
 struct FunctorATop
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template<typename Channel>
 	inline void operator()( const Channel& A, const Channel& B, Channel& d )
 	{
+		static const Channel max = boost::gil::channel_traits<Channel>::max_value();
 		// Ab + B(1-a)
-		d = A * b + B * ( boost::gil::channel_traits<Channel>::max_value() - a );
+		d = A * b + B * ( max - a );
 	}
 
 };
 
 template <typename Pixel>
 struct FunctorConjointOver
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -462,10 +465,10 @@ struct FunctorConjointOver
 
 template <typename Pixel>
 struct FunctorDisjointOver
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -483,10 +486,10 @@ struct FunctorDisjointOver
 
 template <typename Pixel>
 struct FunctorIn
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -499,10 +502,10 @@ struct FunctorIn
 
 template <typename Pixel>
 struct FunctorMask
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -515,10 +518,10 @@ struct FunctorMask
 
 template <typename Pixel>
 struct FunctorMatte
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -533,10 +536,10 @@ struct FunctorMatte
 
 template <typename Pixel>
 struct FunctorOut
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -551,10 +554,10 @@ struct FunctorOut
 
 template <typename Pixel>
 struct FunctorOver
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -567,10 +570,10 @@ struct FunctorOver
 
 template <typename Pixel>
 struct FunctorStencil
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -583,10 +586,10 @@ struct FunctorStencil
 
 template <typename Pixel>
 struct FunctorUnder
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -599,10 +602,10 @@ struct FunctorUnder
 
 template <typename Pixel>
 struct FunctorXOR
-	: public boost::gil::merge_functor<Pixel, fun_op_alpha_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>
 {
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::a;
-	using boost::gil::merge_functor<Pixel, fun_op_alpha_t>::b;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::a;
+	using boost::gil::merge_functor<Pixel, merge_per_channel_with_alpha>::b;
 	//@todo: this functor only work on floats, on int types it
 	//       needs to be specialized
 	template <typename Channel>
@@ -621,7 +624,7 @@ struct FunctorXOR
 
 template <typename Pixel>
 struct FunctorColor
-	: public boost::gil::merge_functor<Pixel, fun_op_pixel_t>
+	: public boost::gil::merge_functor<Pixel, merge_per_pixel>
 {
 	//@todo: make this code faster
 	inline void operator()( const Pixel& A, const Pixel& B, Pixel& C )

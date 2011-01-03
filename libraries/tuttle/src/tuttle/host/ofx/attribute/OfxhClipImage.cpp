@@ -1,18 +1,15 @@
 #include "OfxhClipImage.hpp"
 
-#include <tuttle/host/ofx/OfxhImageEffectNode.hpp>
-
 namespace tuttle {
 namespace host {
 namespace ofx {
 namespace attribute {
 
 /**
- * clip clipimage instance
+ * clipimage instance
  */
-OfxhClipImage::OfxhClipImage( imageEffect::OfxhImageEffectNode& effectInstance, const attribute::OfxhClipImageDescriptor& desc )
+OfxhClipImage::OfxhClipImage( const attribute::OfxhClipImageDescriptor& desc )
 	: attribute::OfxhClip( desc )
-	, _effectInstance( effectInstance )
 	//				, _pixelDepth( kOfxBitDepthNone )
 	//				, _components( kOfxImageComponentNone )
 {
@@ -43,7 +40,6 @@ OfxhClipImage::OfxhClipImage( imageEffect::OfxhImageEffectNode& effectInstance, 
 
 OfxhClipImage::OfxhClipImage( const OfxhClipImage& other )
 	: attribute::OfxhClip( other )
-	, _effectInstance( other._effectInstance ) ///< @todo tuttle bad link in copy....
 {}
 
 /// given the colour component, find the nearest set of supported colour components
@@ -52,24 +48,35 @@ const std::string& OfxhClipImage::findSupportedComp( const std::string& s ) cons
 {
 	static const std::string none( kOfxImageComponentNone );
 	static const std::string rgba( kOfxImageComponentRGBA );
+	static const std::string rgb( kOfxImageComponentRGB );
 	static const std::string alpha( kOfxImageComponentAlpha );
 
 	/// is it there
 	if( isSupportedComponent( s ) )
 		return s;
 
-	/// were we fed some custom non chromatic component by getUnmappedComponents? Return it.
-	/// we should never be here mind, so a bit weird
-	if( !_effectInstance.isChromaticComponent( s ) )
-		return s;
+/// @todo tuttle: can we remove this check ?
+//	/// were we fed some custom non chromatic component by getUnmappedComponents? Return it.
+//	/// we should never be here mind, so a bit weird
+//	if( !_effectInstance.isChromaticComponent( s ) )
+//		return s;
 
 	/// Means we have RGBA or Alpha being passed in and the clip
 	/// only supports the other one, so return that
-	if( s == kOfxImageComponentRGBA && isSupportedComponent( kOfxImageComponentAlpha ) )
-		return alpha;
-
-	if( s == kOfxImageComponentAlpha && isSupportedComponent( kOfxImageComponentRGBA ) )
-		return rgba;
+	if( s == rgba )
+	{
+		if( isSupportedComponent( rgb ) )
+			return rgb;
+		if( isSupportedComponent( alpha ) )
+			return alpha;
+	}
+	else if( s == alpha )
+	{
+		if( isSupportedComponent( rgba ) )
+			return rgba;
+		if( isSupportedComponent( rgb ) )
+			return rgb;
+	}
 
 	/// wierd, must be some custom bit , if only one, choose that, otherwise no idea
 	/// how to map, you need to derive to do so.

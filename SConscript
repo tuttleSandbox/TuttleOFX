@@ -3,11 +3,12 @@ Import( 'libs' )
 
 
 tuttleFlags = { 'LIBPATH': [project.inOutputLib()],
-                'CCFLAGS': project.CC['warning2'],
+                'CCFLAGS': project.CC['warning3'],
+                'CPPDEFINES':[('TUTTLE_PLUGIN_PATH','"'+project.inOutputBin()+'"')],
                }
 
 if project.env['mode'] == 'production' :
-	tuttleFlags['CCFLAGS'].append( project.CC['define']+'TUTTLE_PRODUCTION' )
+	tuttleFlags['CPPDEFINES'].append( 'TUTTLE_PRODUCTION' )
 
 if 'sharedNoUndefined' in project.CC:
 	tuttleFlags['SHLINKFLAGS'] = [project.CC['sharedNoUndefined']]
@@ -21,5 +22,5 @@ project.commonLibs.append( tuttle )
 
 
 
-SConscript( project.scanFiles( ['libraries', 'plugins', 'applications'], accept=['SConscript'] ) )
+SConscript( project.scanFiles( ['libraries/openfxHack', 'libraries/tuttle', 'plugins', 'applications'], accept=['SConscript'] ) )
 

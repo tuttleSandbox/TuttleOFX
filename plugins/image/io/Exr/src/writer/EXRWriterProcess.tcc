@@ -1,9 +1,10 @@
 #include "EXRWriterDefinitions.hpp"
 #include "EXRWriterProcess.hpp"
+#include "EXRWriterPlugin.hpp"
+#include "../half/gilHalf.hpp"
 
 #include <tuttle/plugin/image/gil/globals.hpp>
-#include "../half/gilHalf.hpp"
-#include "EXRWriterPlugin.hpp"
+#include <tuttle/plugin/image/gil/clamp.hpp>
 #include <tuttle/plugin/ImageGilProcessor.hpp>
 #include <tuttle/plugin/exceptions.hpp>
 
@@ -45,6 +46,7 @@ void EXRWriterProcess<View>::multiThreadProcessImages( const OfxRectI& procWindo
 	BOOST_ASSERT( ( procWindowRoW == this->_dstPixelRod ) );
 	BOOST_ASSERT( ( this->_srcPixelRod == this->_dstPixelRod ) );
 	EXRWriterProcessParams params = _plugin.getProcessParams( this->_renderArgs.time );
+	
 	try
 	{
 		switch( params._bitDepth )
@@ -151,7 +153,7 @@ void EXRWriterProcess<View>::writeImage( View& src, std::string& filepath, Imf::
 	image_t img( src.width(), src.height() );
 	view_t dvw( view( img ) );
 	View flippedView = flipped_up_down_view( src );
-	copy_and_convert_pixels( clamp<WPixel>( flippedView ), dvw );
+	copy_and_convert_pixels( clamp_view( flippedView ), dvw );
 	Imf::Header header( src.width(), src.height() );
 	switch( pixType )
 	{

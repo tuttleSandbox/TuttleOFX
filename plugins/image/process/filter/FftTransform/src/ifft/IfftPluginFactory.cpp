@@ -6,7 +6,7 @@
 #include "IfftPlugin.hpp"
 #include "IfftDefinitions.hpp"
 
-#include <tuttle/plugin/ImageGilProcessor.hpp>
+#include <ofxsImageEffect.h>
 
 namespace tuttle {
 namespace plugin {
@@ -21,7 +21,7 @@ void IfftPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 {
 	desc.setLabels( "TuttleIfft", "Ifft",
 	                "Backward fft" );
-	desc.setPluginGrouping( "tuttle" );
+	desc.setPluginGrouping( "tuttle/image/process/filter" );
 
 	// add the supported contexts, only filter at the moment
 	desc.addSupportedContext( OFX::eContextGeneral );

@@ -3,9 +3,9 @@
 #include "DPXReaderProcess.hpp"
 
 #include <tuttle/plugin/image/gil/globals.hpp>
-#include <tuttle/plugin/image/gil/typedefs.hpp>
 #include <tuttle/plugin/ImageGilProcessor.hpp>
 #include <tuttle/plugin/exceptions.hpp>
+#include <boost/gil/extension/typedefs.hpp>
 
 #include <cstdlib>
 #include <cassert>
@@ -46,10 +46,6 @@ void DPXReaderProcess<View>::setup( const OFX::RenderArguments& args )
 	using namespace boost::gil;
 	ImageGilProcessor<View>::setup( args );
 	DPXReaderProcessParams params = _plugin.getProcessParams( args.time );
-	if( !bfs::exists( params._filepath ) )
-	{
-		BOOST_THROW_EXCEPTION( OFX::Exception::Suite( kOfxStatFailed, std::string( "Unable to open : " ) + params._filepath ) );
-	}
 	_dpxImage.read( params._filepath, true );
 }
 

@@ -23,7 +23,7 @@ namespace attribute {
 class ClipImage : public Attribute
 	, public ofx::attribute::OfxhClipImage
 {
-friend class ImageEffectNode;
+friend class INode;
 
 protected:
 	std::string _name;
@@ -34,7 +34,7 @@ protected:
 	const ClipImage* _connectedClip; ///< @warning HACK ! to force connection (only for test) @todo remove this !!!!
 
 public:
-	ClipImage( ImageEffectNode& effect, const ofx::attribute::OfxhClipImageDescriptor& desc );
+	ClipImage( INode& effect, const ofx::attribute::OfxhClipImageDescriptor& desc );
 
 	~ClipImage();
 
@@ -111,6 +111,7 @@ public:
 	 * @returns
 	 *      - kOfxImageComponentNone (implying a clip is unconnected, not valid for an image)
 	 *      - kOfxImageComponentRGBA
+	 *      - kOfxImageComponentRGB
 	 *      - kOfxImageComponentAlpha
 	 */
 	const std::string& getUnmappedComponents() const;

@@ -1,10 +1,7 @@
 #include "CropDefinitions.hpp"
 #include "CropPlugin.hpp"
 #include "CropProcess.hpp"
-#include <ofxsImageEffect.h>
 
-#include <ofxsImageEffect.h>
-#include <ofxsMultiThread.h>
 #include <boost/gil/gil_all.hpp>
 #include <boost/math/special_functions/round.hpp>
 
@@ -16,100 +13,16 @@ using namespace boost::math;
 using namespace boost::gil;
 
 CropPlugin::CropPlugin( OfxImageEffectHandle handle )
-	: ImageEffect( handle )
+	: ImageEffectGilPlugin( handle )
 {
-	_clipSrc = fetchClip( kOfxImageEffectSimpleSourceClipName );
-	_clipDst = fetchClip( kOfxImageEffectOutputClipName );
-	_formats = fetchChoiceParam( kParamPresets );
-	_rect    = fetchBooleanParam( kParamDisplayRect );
+	_paramFormats = fetchChoiceParam( kParamPresets );
+	_paramOverlayRect    = fetchBooleanParam( kParamDisplayRect );
 }
 
-OFX::Clip* CropPlugin::getSrcClip() const
-{
-	return _clipSrc;
-}
-
-OFX::Clip* CropPlugin::getDstClip() const
-{
-	return _clipDst;
-}
 
 bool CropPlugin::displayRect()
 {
-	return _rect->getValue();
-}
-
-/**
- * @brief The overridden render function
- * @param[in]   args     Rendering parameters
- */
-void CropPlugin::render( const OFX::RenderArguments& args )
-{
-	// instantiate the render code based on the pixel depth of the dst clip
-	OFX::EBitDepth dstBitDepth         = _clipDst->getPixelDepth();
-	OFX::EPixelComponent dstComponents = _clipDst->getPixelComponents();
-
-	// do the rendering
-	if( dstComponents == OFX::ePixelComponentRGBA )
-	{
-		switch( dstBitDepth )
-		{
-			case OFX::eBitDepthUByte:
-			{
-				CropProcess<rgba8_view_t> fred( *this );
-				fred.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthUShort:
-			{
-				CropProcess<rgba16_view_t> fred( *this );
-				fred.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthFloat:
-			{
-				CropProcess<rgba32f_view_t> fred( *this );
-				fred.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthNone:
-				COUT_FATALERROR( "BitDepthNone not recognize." );
-				return;
-			case OFX::eBitDepthCustom:
-				COUT_FATALERROR( "BitDepthCustom not recognize." );
-				return;
-		}
-	}
-	else if( dstComponents == OFX::ePixelComponentAlpha )
-	{
-		switch( dstBitDepth )
-		{
-			case OFX::eBitDepthUByte:
-			{
-				CropProcess<gray8_view_t> fred( *this );
-				fred.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthUShort:
-			{
-				CropProcess<gray16_view_t> fred( *this );
-				fred.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthFloat:
-			{
-				CropProcess<gray32f_view_t> fred( *this );
-				fred.setupAndProcess( args );
-				break;
-			}
-			case OFX::eBitDepthNone:
-				COUT_FATALERROR( "BitDepthNone not recognize." );
-				return;
-			case OFX::eBitDepthCustom:
-				COUT_FATALERROR( "BitDepthCustom not recognize." );
-				return;
-		}
-	}
+	return _paramOverlayRect->getValue();
 }
 
 void CropPlugin::changedParam( const OFX::InstanceChangedArgs& args, const std::string& paramName )
@@ -125,7 +38,7 @@ void CropPlugin::changedParam( const OFX::InstanceChangedArgs& args, const std::
 		// Compute bands sizes in pixels
 		int f, bandSize;
 		double ratio;
-		_formats->getValue( f );
+		_paramFormats->getValue( f );
 		OFX::IntParam* upBand    = fetchIntParam( kParamUp );
 		OFX::IntParam* downBand  = fetchIntParam( kParamDown );
 		OFX::IntParam* leftBand  = fetchIntParam( kParamLeft );
@@ -189,27 +102,26 @@ void CropPlugin::changedParam( const OFX::InstanceChangedArgs& args, const std::
 	}
 }
 
-OfxRectD CropPlugin::getCropRect( OfxRectD* clipROD /* = NULL */ )
+OfxRectD CropPlugin::getCropRect( const OfxRectD& rod, const double par )
 {
-	OfxRectD tmp;
-
-	if( !clipROD )
-	{
-		tmp     = getSrcClip()->getCanonicalRod( timeLineGetTime() );
-		clipROD = &tmp;
-	}
 	OfxRectD rect;
-	double par               = getSrcClip()->getPixelAspectRatio();
 	OFX::IntParam* upBand    = fetchIntParam( kParamUp );
 	OFX::IntParam* downBand  = fetchIntParam( kParamDown );
 	OFX::IntParam* leftBand  = fetchIntParam( kParamLeft );
 	OFX::IntParam* rightBand = fetchIntParam( kParamRight );
 
 	rect.x1 = par * leftBand->getValue();
-	rect.x2 = clipROD->x2 - par* rightBand->getValue();
+	rect.x2 = rod.x2 - par* rightBand->getValue();
 	rect.y1 = downBand->getValue();
-	rect.y2 = clipROD->y2 - upBand->getValue();
+	rect.y2 = rod.y2 - upBand->getValue();
 	return rect;
+}
+
+OfxRectD CropPlugin::getCropRect( const OfxTime time )
+{
+	const OfxRectD srcRod = _clipSrc->getCanonicalRod( time );
+	const double par       = _clipSrc->getPixelAspectRatio();
+	return getCropRect( srcRod, par );
 }
 
 bool CropPlugin::getRegionOfDefinition( const OFX::RegionOfDefinitionArguments& args, OfxRectD& rod )
@@ -218,14 +130,19 @@ bool CropPlugin::getRegionOfDefinition( const OFX::RegionOfDefinitionArguments& 
 
 	if( bop->getValue() == false )
 	{
-		OfxRectD rect = getSrcClip()->getCanonicalRod( args.time );
-		rod = getCropRect( &rect );
+		rod = getCropRect( args.time );
+		return true;
 	}
-	else
-	{
-		rod = getSrcClip()->getCanonicalRod( args.time );
-	}
-	return true;
+	return false;
+}
+
+/**
+ * @brief The overridden render function
+ * @param[in]   args     Rendering parameters
+ */
+void CropPlugin::render( const OFX::RenderArguments& args )
+{
+	doGilRender<CropProcess>( *this, args );
 }
 
 }

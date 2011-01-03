@@ -1,6 +1,8 @@
 #include "DPXWriterDefinitions.hpp"
 #include "DPXWriterPlugin.hpp"
 
+#include <tuttle/plugin/image/gil/clamp.hpp>
+
 #include <boost/exception/errinfo_file_name.hpp>
 #include <boost/assert.hpp>
 #include <boost/cstdint.hpp>
@@ -32,6 +34,7 @@ void DPXWriterProcess<View>::multiThreadProcessImages( const OfxRectI& procWindo
 	BOOST_ASSERT( procWindowRoW == this->_dstPixelRod );
 	BOOST_ASSERT( this->_srcPixelRod == this->_dstPixelRod );
 	DPXWriterProcessParams params = _plugin.getProcessParams( this->_renderArgs.time );
+	
 	int packing                   = params._compressed == false;
 	try
 	{
@@ -155,7 +158,7 @@ void DPXWriterProcess<View>::writeImage( View& src, const std::string& filepath,
 	WImage img( src.width(), src.height() );
 
 	typename WImage::view_t vw( view( img ) );
-	copy_and_convert_pixels( clamp<typename WImage::view_t::value_type>( flippedView ), vw );
+	copy_and_convert_pixels( clamp_view( flippedView ), vw );
 	boost::uint8_t* pData = (boost::uint8_t*)boost::gil::interleaved_view_get_raw_data( vw );
 	// Little endian
 	_dpxHeader.setBigEndian( false );

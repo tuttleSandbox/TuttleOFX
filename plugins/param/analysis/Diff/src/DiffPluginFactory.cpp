@@ -14,7 +14,7 @@ namespace quality {
  */
 void DiffPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 {
-	desc.setLabels( "TuttleDiff", "TuttleDiff", "TuttleDiff" );
+	desc.setLabels( "TuttleDiff", "Diff", "Diff" );
 	desc.setPluginGrouping( "tuttle/param/analysis" );
 
 	// add the supported contexts, only filter at the moment
@@ -63,8 +63,8 @@ void DiffPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 	assert( diffFunction );
 	diffFunction->setLabel( "Quality mesure function" );
 	diffFunction->appendOption( "PSNR (Peak Signal to Noise Ratio)" );
-	diffFunction->appendOption( "MSE (Mean Square Error)" );
-	diffFunction->appendOption( "SSIM (Structural SIMilarity)" );
+//	diffFunction->appendOption( "MSE (Mean Square Error)" );
+//	diffFunction->appendOption( "SSIM (Structural SIMilarity)" );
 	diffFunction->setDefault( 0 );
 
 	OFX::RGBAParamDescriptor* outputQualityMesure = desc.defineRGBAParam( kOutputQualityMesure );
@@ -72,9 +72,9 @@ void DiffPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 	outputQualityMesure->setLabel( "Quality" );
 	outputQualityMesure->setEvaluateOnChange( false );
 
-	OFX::PushButtonParamDescriptor* helpButton = desc.definePushButtonParam( kHelpButton );
-	assert( helpButton );
-	helpButton->setLabel( "Help" );
+//	OFX::PushButtonParamDescriptor* helpButton = desc.definePushButtonParam( kHelpButton );
+//	assert( helpButton );
+//	helpButton->setLabel( "Help" );
 }
 
 /**

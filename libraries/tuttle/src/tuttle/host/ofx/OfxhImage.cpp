@@ -65,7 +65,7 @@ OfxhImage::OfxhImage()
 	, _referenceCount( 1 )
 	, _clipName( "No clip !" )
 {
-	COUT( "++ OfxhImage, clipName:" << getClipName() << ", id:" << getId() << ", ref:" << getReference() );
+	TCOUT( "++ OfxhImage, clipName:" << getClipName() << ", id:" << getId() << ", ref:" << getReference() );
 }
 
 /**
@@ -77,7 +77,7 @@ OfxhImage::OfxhImage( attribute::OfxhClip& instance )
 	, _referenceCount( 1 )
 	, _clipName( instance.getName() )
 {
-	COUT( "++ OfxhImage, clipName:" << getClipName() << ", id:" << getId() << ", ref:" << getReference() );
+	TCOUT( "++ OfxhImage, clipName:" << getClipName() << ", id:" << getId() << ", ref:" << getReference() );
 	initClipBits( instance );
 }
 
@@ -98,7 +98,7 @@ OfxhImage::OfxhImage( attribute::OfxhClip& instance,
 	, _referenceCount( 1 )
 	, _clipName( instance.getName() )
 {
-	COUT( "++ OfxhImage, clipName:" << getClipName() << ", id:" << getId() << ", ref:" << getReference() );
+	TCOUT( "++ OfxhImage, clipName:" << getClipName() << ", id:" << getId() << ", ref:" << getReference() );
 	initClipBits( instance );
 
 	// set other data
@@ -122,7 +122,7 @@ OfxhImage::OfxhImage( attribute::OfxhClip& instance,
 
 OfxhImage::~OfxhImage()
 {
-	COUT( "-- ~OfxhImage, clipName:" << getClipName() << ", id:" << getId() << ", ref:" << getReference() );
+	TCOUT( "-- ~OfxhImage, clipName:" << getClipName() << ", id:" << getId() << ", ref:" << getReference() );
 }
 
 /// called during ctor to get bits from the clip props into ours
@@ -145,15 +145,11 @@ void OfxhImage::initClipBits( attribute::OfxhClip& instance )
 
 	// get and set the clip instance pixel aspect ratio
 	setDoubleProperty( kOfxImagePropPixelAspectRatio, clipProperties.getDoubleProperty( kOfxImagePropPixelAspectRatio ) );
-
-	// get and set the clip instance pixel aspect ratio
-	setDoubleProperty( kOfxImagePropPixelAspectRatio, clipProperties.getDoubleProperty( kOfxImagePropPixelAspectRatio ) );
 }
 
 OfxRectI OfxhImage::getBounds() const
 {
 	OfxRectI bounds;
-
 	getIntPropertyN( kOfxImagePropBounds, &bounds.x1, 4 );
 	return bounds;
 }
@@ -161,8 +157,7 @@ OfxRectI OfxhImage::getBounds() const
 OfxRectI OfxhImage::getROD() const
 {
 	OfxRectI rod;
-
-	getIntPropertyN( kOfxImagePropBounds, &rod.x1, 4 );
+	getIntPropertyN( kOfxImagePropRegionOfDefinition, &rod.x1, 4 );
 	return rod;
 }
 
@@ -194,6 +189,10 @@ EPixelComponent OfxhImage::getComponentsType() const
 	if( sType == kOfxImageComponentRGBA )
 	{
 		compType = ePixelComponentRGBA;
+	}
+	else if( sType == kOfxImageComponentRGB )
+	{
+		compType = ePixelComponentRGB;
 	}
 	else if( sType == kOfxImageComponentAlpha )
 	{

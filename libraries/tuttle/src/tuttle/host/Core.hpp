@@ -1,8 +1,6 @@
 #ifndef _TUTTLE_HOST_CORE_HPP_
 #define _TUTTLE_HOST_CORE_HPP_
 
-#include "ImageEffectNode.hpp"
-
 #include <tuttle/host/memory/IMemoryCache.hpp>
 #include <tuttle/host/HostDescriptor.hpp>
 #include <tuttle/host/ofx/OfxhPluginCache.hpp>
@@ -33,6 +31,7 @@ private:
 	memory::IMemoryCache& _memoryCache;
 
 public:
+	      ofx::OfxhPluginCache& getPluginCache()       { return _pluginCache; }
 	const ofx::OfxhPluginCache& getPluginCache() const { return _pluginCache; }
 	const Host&                 getHost() const        { return _host; }
 	#endif

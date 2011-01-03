@@ -1,7 +1,7 @@
 #ifndef _TUTTLE_PLUGIN_DIFF_DEFINITIONS_HPP_
 #define _TUTTLE_PLUGIN_DIFF_DEFINITIONS_HPP_
 
-#include <tuttle/common/utils/global.hpp>
+#include <tuttle/plugin/global.hpp>
 
 namespace tuttle {
 namespace plugin {
@@ -13,8 +13,8 @@ const static std::string kMeasureFunction      = "measureFunction";
 const static std::string kMeasureFunctionLabel = "measureFunction";
 const static std::string kOutputQualityMesure  = "Quality";
 
-const static std::string kHelpButton = "Help";
-const static std::string kHelpString = "<b>Diff</b> plugin is used to ???.  <br />";
+//const static std::string kHelpButton = "Help";
+//const static std::string kHelpString = "<b>Diff</b> plugin is used to ???.  <br />";
 
 }
 }

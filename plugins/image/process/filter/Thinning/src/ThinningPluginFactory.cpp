@@ -2,7 +2,7 @@
 #include "ThinningPlugin.hpp"
 #include "ThinningDefinitions.hpp"
 
-#include <tuttle/plugin/ImageGilProcessor.hpp>
+#include <ofxsImageEffect.h>
 
 #include <limits>
 
@@ -19,9 +19,9 @@ static const bool kSupportTiles = true;
  */
 void ThinningPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 {
-	desc.setLabels( "Thinning", "Thinning",
+	desc.setLabels( "TuttleThinning", "Thinning",
 		            "Thinning" );
-	desc.setPluginGrouping( "tuttle" );
+	desc.setPluginGrouping( "tuttle/image/process/filter" );
 
 	// add the supported contexts, only filter at the moment
 	desc.addSupportedContext( OFX::eContextFilter );
@@ -47,12 +47,14 @@ void ThinningPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 {
 	OFX::ClipDescriptor* srcClip = desc.defineClip( kOfxImageEffectSimpleSourceClipName );
 	srcClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	srcClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	srcClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	srcClip->setSupportsTiles( kSupportTiles );
 
 	// Create the mandated output clip
 	OFX::ClipDescriptor* dstClip = desc.defineClip( kOfxImageEffectOutputClipName );
 	dstClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	dstClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	dstClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	dstClip->setSupportsTiles( kSupportTiles );
 

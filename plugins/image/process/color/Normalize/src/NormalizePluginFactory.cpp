@@ -2,12 +2,9 @@
 #include "NormalizePlugin.hpp"
 #include "NormalizeDefinitions.hpp"
 
-#include <tuttle/plugin/ImageGilProcessor.hpp>
 #include <tuttle/plugin/exceptions.hpp>
 
 #include <ofxsMultiThread.h>
-#include <boost/gil/gil_all.hpp>
-#include <boost/scoped_ptr.hpp>
 
 namespace tuttle {
 namespace plugin {
@@ -22,9 +19,9 @@ static const bool kSupportTiles = true;
  */
 void NormalizePluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 {
-	desc.setLabels( "Normalize", "Normalize",
+	desc.setLabels( "TuttleNormalize", "Normalize",
 		            "Normalize" );
-	desc.setPluginGrouping( "tuttle" );
+	desc.setPluginGrouping( "tuttle/image/process/color" );
 
 	// add the supported contexts, only filter at the moment
 	desc.addSupportedContext( OFX::eContextFilter );
@@ -50,12 +47,14 @@ void NormalizePluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc
 {
 	OFX::ClipDescriptor* srcClip = desc.defineClip( kOfxImageEffectSimpleSourceClipName );
 	srcClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	srcClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	srcClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	srcClip->setSupportsTiles( kSupportTiles );
 
 	// Create the mandated output clip
 	OFX::ClipDescriptor* dstClip = desc.defineClip( kOfxImageEffectOutputClipName );
 	dstClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	dstClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	dstClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	dstClip->setSupportsTiles( kSupportTiles );
 

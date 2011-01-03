@@ -2,7 +2,7 @@
 #include "SobelPlugin.hpp"
 #include "SobelDefinitions.hpp"
 
-#include <tuttle/plugin/ImageGilProcessor.hpp>
+#include <ofxsImageEffect.h>
 
 namespace tuttle {
 namespace plugin {
@@ -17,9 +17,9 @@ static const bool kSupportTiles = true;
  */
 void SobelPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 {
-	desc.setLabels( "Sobel", "Sobel",
+	desc.setLabels( "TuttleSobel", "Sobel",
 		            "Sobel" );
-	desc.setPluginGrouping( "tuttle" );
+	desc.setPluginGrouping( "tuttle/image/process/filter" );
 
 	// add the supported contexts, only filter at the moment
 	desc.addSupportedContext( OFX::eContextFilter );
@@ -45,13 +45,13 @@ void SobelPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 {
 	OFX::ClipDescriptor* srcClip = desc.defineClip( kOfxImageEffectSimpleSourceClipName );
 	srcClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	srcClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	srcClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	srcClip->setSupportsTiles( kSupportTiles );
 
-	// Create the mandated output clip
 	OFX::ClipDescriptor* dstClip = desc.defineClip( kOfxImageEffectOutputClipName );
 	dstClip->addSupportedComponent( OFX::ePixelComponentRGBA );
-//	dstClip->addSupportedComponent( OFX::ePixelComponentAlpha );
+	dstClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	dstClip->setSupportsTiles( kSupportTiles );
 
 	OFX::Double2DParamDescriptor* size = desc.defineDouble2DParam( kParamSize );
@@ -61,15 +61,43 @@ void SobelPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 	size->setDisplayRange( 0, 0, 10, 10 );
 	size->setDoubleType( OFX::eDoubleTypeScale );
 
+	OFX::GroupParamDescriptor* advanced = desc.defineGroupParam( kParamGroupAdvanced );
+	advanced->setLabel( "Advanced" );
+
 	OFX::BooleanParamDescriptor* unidimensional = desc.defineBooleanParam( kParamUnidimensional );
 	unidimensional->setLabel( "Unidimensional" );
 	unidimensional->setHint( "Instead of using a square convolution matrix, use 1D kernels." );
 	unidimensional->setDefault( false );
+	unidimensional->setParent( advanced );
+
+	OFX::BooleanParamDescriptor* reverseKernel = desc.defineBooleanParam( kParamReverseKernel );
+	reverseKernel->setLabel( "Reverse" );
+	reverseKernel->setHint( "Reverse the kernel (convolution or correlation)." );
+	reverseKernel->setDefault( false );
+	reverseKernel->setParent( advanced );
 
 	OFX::BooleanParamDescriptor* normalizedKernel = desc.defineBooleanParam( kParamNormalizedKernel );
 	normalizedKernel->setLabel( "Normalized kernel" );
 	normalizedKernel->setHint( "Use a normalized kernel to compute the gradient." );
 	normalizedKernel->setDefault( true );
+	normalizedKernel->setParent( advanced );
+
+	OFX::DoubleParamDescriptor* kernelEpsilon = desc.defineDoubleParam( kParamKernelEpsilon );
+	kernelEpsilon->setLabel( "Kernel espilon value" );
+	kernelEpsilon->setHint( "Threshold at which we no longer consider the values of the function." );
+	kernelEpsilon->setDefault( 0.01 );
+	kernelEpsilon->setDisplayRange( 0, 0.01 );
+	kernelEpsilon->setParent( advanced );
+
+	OFX::ChoiceParamDescriptor* pass = desc.defineChoiceParam( kParamPass );
+	pass->setLabel( "Pass" );
+	pass->setHint( "The sobel filter is computed using a 2D separable filter. So it consists in 2 passes.\n"
+	               "By default we compute the 2 passes, but with this option you can separate each pass." );
+	pass->appendOption( kParamPassFull );
+	pass->appendOption( kParamPass1 );
+	pass->appendOption( kParamPass2 );
+	pass->setDefault( 0 );
+	pass->setParent( advanced );
 
 	OFX::ChoiceParamDescriptor* border = desc.defineChoiceParam( kParamBorder );
 	border->setLabel( "Gradient border" );
@@ -92,12 +120,21 @@ void SobelPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 	OFX::BooleanParamDescriptor* computeGradientDirection = desc.defineBooleanParam( kParamComputeGradientDirection );
 	computeGradientDirection->setLabel( "Gradient direction" );
 	computeGradientDirection->setHint( "To disable the gradient direction computation, if you don't need it." );
-	computeGradientDirection->setDefault( true );
+	computeGradientDirection->setDefault( false );
 
 	OFX::BooleanParamDescriptor* gradientDirectionAbs = desc.defineBooleanParam( kParamGradientDirectionAbs );
 	gradientDirectionAbs->setLabel( "Angle between 0 and PI" );
 	gradientDirectionAbs->setHint( "Limit gradient direction between 0 and PI." );
 	gradientDirectionAbs->setDefault( true );
+
+	OFX::PushButtonParamDescriptor* infosButton = desc.definePushButtonParam( kParamInfos );
+	infosButton->setLabel( "Infos" );
+
+	OFX::ChoiceParamDescriptor* outputComponent = desc.defineChoiceParam( kParamOutputComponent );
+	outputComponent->setLabel( "Output component" );
+	outputComponent->appendOption( OFX::getImageEffectHostDescription()->supportsPixelComponent(OFX::ePixelComponentRGBA) ? kParamOutputComponentRGBA : "---" );
+	outputComponent->appendOption( OFX::getImageEffectHostDescription()->supportsPixelComponent(OFX::ePixelComponentRGB) ? kParamOutputComponentRGB : "---" );
+	outputComponent->setIsSecret( OFX::getImageEffectHostDescription()->_supportedComponents.size() == 1 );
 }
 
 /**
