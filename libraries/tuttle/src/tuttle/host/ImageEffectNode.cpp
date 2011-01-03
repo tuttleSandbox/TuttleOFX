@@ -773,9 +773,9 @@ std::ostream& operator<<( std::ostream& os, const ImageEffectNode& v )
 void ImageEffectNode::debugOutputImage( const OfxTime time ) const
 {
 	#ifdef TUTTLE_DEBUG_OUTPUT_ALL_NODES
-	IMemoryCache& memoryCache( Core::instance().getMemoryCache() );
+	memory::IMemoryCache& memoryCache( Core::instance().getMemoryCache() );
 
-	boost::shared_ptr<Image> image = memoryCache.get( this->getName() + "." kOfxOutputAttributeName, time );
+	memory::CACHE_ELEMENT image = memoryCache.get( this->getName() + "." kOfxOutputAttributeName, time );
 
 	// big hack, for debug...
 	image->debugSaveAsPng( "data/debug/" + boost::lexical_cast<std::string>( time ) + "_" + this->getName() + ".png" );

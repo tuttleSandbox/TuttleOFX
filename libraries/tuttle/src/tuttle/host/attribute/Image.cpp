@@ -8,9 +8,9 @@
 #include <boost/gil/image_view.hpp>
 #include <boost/gil/typedefs.hpp>
 
-//#ifndef TUTTLE_PRODUCTION
-// #include <boost/gil/extension/io/png_io.hpp>
-//#endif
+#ifndef TUTTLE_PRODUCTION
+ #include <boost/gil/extension/io/png_io.hpp>
+#endif
 
 namespace tuttle {
 namespace host {

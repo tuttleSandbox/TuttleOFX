@@ -385,8 +385,12 @@ memory::MemoryCache ProcessGraph::process( const int tBegin, const int tEnd )
 	}
 
 	//--- END RENDER
-	BOOST_FOREACH( NodeMap::value_type& p, _nodes )
+	//BOOST_FOREACH( NodeMap::value_type& p, _nodes )
+	for( NodeMap::iterator it = _nodes.begin(), itEnd = _nodes.end();
+	     it != itEnd;
+	     ++it )
 	{
+		NodeMap::value_type& p = *it;
 		p.second->endSequence( defaultOptions ); // node option... or no option here ?
 	}
 	return result;
