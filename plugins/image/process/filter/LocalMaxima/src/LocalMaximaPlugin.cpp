@@ -2,9 +2,6 @@
 #include "LocalMaximaProcess.hpp"
 #include "LocalMaximaDefinitions.hpp"
 
-#include <tuttle/common/utils/global.hpp>
-#include <ofxsImageEffect.h>
-#include <ofxsMultiThread.h>
 #include <boost/gil/gil_all.hpp>
 
 namespace tuttle {
@@ -12,13 +9,11 @@ namespace plugin {
 namespace localmaxima {
 
 
-LocalMaximaPlugin::LocalMaximaPlugin( OfxImageEffectHandle handle ) :
-ImageEffect( handle )
+LocalMaximaPlugin::LocalMaximaPlugin( OfxImageEffectHandle handle )
+: ImageEffectGilPlugin( handle )
 {
-    _clipSrc = fetchClip( kOfxImageEffectSimpleSourceClipName );
-    _clipDst = fetchClip( kOfxImageEffectOutputClipName );
-
 	_paramBorder = fetchChoiceParam( kParamBorder );
+	_paramOutputComponent = fetchChoiceParam( kParamOutputComponent );
 }
 
 LocalMaximaProcessParams<LocalMaximaPlugin::Scalar> LocalMaximaPlugin::getProcessParams( const OfxPointD& renderScale ) const
@@ -38,6 +33,29 @@ void LocalMaximaPlugin::changedParam( const OFX::InstanceChangedArgs &args, cons
 //                     "", // No XML resources
 //                     kParamHelpString );
 //    }
+}
+
+void LocalMaximaPlugin::getClipPreferences( OFX::ClipPreferencesSetter& clipPreferences )
+{
+	EParamOutputComponent comp = static_cast<EParamOutputComponent>(_paramOutputComponent->getValue());
+	switch( comp )
+	{
+		case eParamOutputComponentRGBA:
+		{
+			clipPreferences.setClipComponents( *_clipDst, OFX::ePixelComponentRGBA );
+			break;
+		}
+		case eParamOutputComponentRGB:
+		{
+			clipPreferences.setClipComponents( *_clipDst, OFX::ePixelComponentRGB );
+			break;
+		}
+		case eParamOutputComponentAlpha:
+		{
+			clipPreferences.setClipComponents( *_clipDst, OFX::ePixelComponentAlpha );
+			break;
+		}
+	}
 }
 
 bool LocalMaximaPlugin::getRegionOfDefinition( const OFX::RegionOfDefinitionArguments& args, OfxRectD& rod )
@@ -72,93 +90,65 @@ void LocalMaximaPlugin::getRegionsOfInterest( const OFX::RegionsOfInterestArgume
 	rois.setRegionOfInterest( *_clipSrc, srcRoi );
 }
 
-
-bool LocalMaximaPlugin::isIdentity( const OFX::RenderArguments& args, OFX::Clip*& identityClip, double& identityTime )
-{
-//	LocalMaximaProcessParams<Scalar> params = getProcessParams();
-//	if( params._in == params._out )
-//	{
-//		identityClip = _clipSrc;
-//		identityTime = args.time;
-//		return true;
-//	}
-	return false;
-}
-
 /**
  * @brief The overridden render function
  * @param[in]   args     Rendering parameters
  */
 void LocalMaximaPlugin::render( const OFX::RenderArguments &args )
 {
-	using namespace boost::gil;
-    // instantiate the render code based on the pixel depth of the dst clip
-    OFX::EBitDepth dstBitDepth = _clipDst->getPixelDepth( );
-    OFX::EPixelComponent dstComponents = _clipDst->getPixelComponents( );
+	doGilRender2<LocalMaximaProcess>( *this, args, *_clipSrc, *_clipDst );
+	
+//	OFX::EBitDepth sBitDepth = _clipSrc->getPixelDepth( );
+//	OFX::EPixelComponent sComponent = _clipSrc->getPixelComponents( );
+//
+//	OFX::EBitDepth dBitDepth = _clipDst->getPixelDepth( );
+//	OFX::EPixelComponent dComponent = _clipDst->getPixelComponents( );
+//
+//	switch( sComponent )
+//	{
+//		case OFX::ePixelComponentRGBA:
+//		{
+//			doGilRender2<LocalMaximaProcess, false, boost::gil::rgba_layout_t>( *this, args, sBitDepth, false, dComponent, dBitDepth );
+//			return;
+//		}
+//		case OFX::ePixelComponentRGB:
+//		{
+////			doGilRender2<LocalMaximaProcess, false, boost::gil::rgb_layout_t>( *this, args, sBitDepth, false, dComponent, dBitDepth );
+//			return;
+//		}
+//		case OFX::ePixelComponentAlpha:
+//		case OFX::ePixelComponentCustom:
+//		case OFX::ePixelComponentNone:
+//		{
+//			BOOST_THROW_EXCEPTION( exception::Unsupported()
+//				<< exception::user() + "Pixel components (" + mapPixelComponentEnumToString(sComponent) + ") not supported by the plugin." );
+//		}
+//	}
+//	BOOST_THROW_EXCEPTION( exception::Unknown() );
 
-    // do the rendering
-    if( dstComponents == OFX::ePixelComponentRGBA )
-    {
-        switch( dstBitDepth )
-        {
-            case OFX::eBitDepthUByte :
-            {
-                LocalMaximaProcess<rgba8_view_t> p( *this );
-                p.setupAndProcess( args );
-                break;
-            }
-            case OFX::eBitDepthUShort :
-            {
-                LocalMaximaProcess<rgba16_view_t> p( *this );
-                p.setupAndProcess( args );
-                break;
-            }
-            case OFX::eBitDepthFloat :
-            {
-                LocalMaximaProcess<rgba32f_view_t> p( *this );
-                p.setupAndProcess( args );
-                break;
-            }
-			default:
-			{
-				COUT_ERROR( "Bit depth (" << mapBitDepthEnumToString(dstBitDepth) << ") not recognized by the plugin." );
-				break;
-			}
-        }
-    }
-//    else if( dstComponents == OFX::ePixelComponentAlpha )
-//    {
-//        switch( dstBitDepth )
-//        {
-//            case OFX::eBitDepthUByte :
-//            {
-//                LocalMaximaProcess<gray8_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
-//            case OFX::eBitDepthUShort :
-//            {
-//                LocalMaximaProcess<gray16_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
-//            case OFX::eBitDepthFloat :
-//            {
-//                LocalMaximaProcess<gray32f_view_t> p( *this );
-//                p.setupAndProcess( args );
-//                break;
-//            }
-//			default:
-//			{
-//				COUT_ERROR( "Bit depth (" << mapBitDepthEnumToString(dstBitDepth) << ") not recognized by the plugin." );
-//				break;
-//			}
-//        }
-//    }
-	else
+	/*
+    switch( components )
 	{
-		COUT_ERROR( "Pixel components (" << mapPixelComponentEnumToString(dstComponents) << ") not supported by the plugin." );
+		case OFX::ePixelComponentRGBA:
+		{
+			doGilRender<LocalMaximaProcess, false, boost::gil::rgba_layout_t>( *this, args, bitDepth );
+			return;
+		}
+		case OFX::ePixelComponentRGB:
+		{
+			doGilRender<LocalMaximaProcess, false, boost::gil::rgb_layout_t>( *this, args, bitDepth );
+			return;
+		}
+		case OFX::ePixelComponentAlpha:
+		case OFX::ePixelComponentCustom:
+		case OFX::ePixelComponentNone:
+		{
+			BOOST_THROW_EXCEPTION( exception::Unsupported()
+				<< exception::user() + "Pixel components (" + mapPixelComponentEnumToString(components) + ") not supported by the plugin." );
+		}
 	}
+	BOOST_THROW_EXCEPTION( exception::Unknown() );
+*/
 }
 
 

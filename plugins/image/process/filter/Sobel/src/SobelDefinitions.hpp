@@ -1,7 +1,7 @@
 #ifndef _TUTTLE_PLUGIN_SOBEL_DEFINITIONS_HPP_
 #define _TUTTLE_PLUGIN_SOBEL_DEFINITIONS_HPP_
 
-#include <tuttle/common/utils/global.hpp>
+#include <tuttle/plugin/global.hpp>
 
 
 namespace tuttle {
@@ -44,6 +44,16 @@ const static std::string kParamComputeGradientNorm = "computeGradientNorm";
 const static std::string kParamGradientNormManhattan = "gradientNormManhattan";
 const static std::string kParamComputeGradientDirection = "computeGradientDirection";
 const static std::string kParamGradientDirectionAbs = "gradientDirectionAbs";
+
+const static std::string kParamOutputComponent = "outputComponent";
+const static std::string kParamOutputComponentRGBA = "RGBA";
+const static std::string kParamOutputComponentRGB = "RGB";
+
+enum EParamOutputComponent
+{
+	eParamOutputComponentRGBA = 0,
+	eParamOutputComponentRGB,
+};
 
 const static std::string kParamInfos = "infos";
 

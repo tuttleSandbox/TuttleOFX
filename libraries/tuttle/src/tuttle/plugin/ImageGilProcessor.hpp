@@ -1,16 +1,20 @@
 #ifndef _TUTTLE_PLUGIN_IMAGEGILPROCESSOR_HPP_
 #define _TUTTLE_PLUGIN_IMAGEGILPROCESSOR_HPP_
 
-#include "ofxsImageEffect.h"
-#include "ofxsMultiThread.h"
-#include "ofxsUtilities.h"
 #include "exceptions.hpp"
 #include "OfxProgress.hpp"
 
 #include <tuttle/plugin/image/gil/globals.hpp>
+#include <tuttle/plugin/exceptions.hpp>
 #include <tuttle/common/math/rectOp.hpp>
 
+#include <ofxsImageEffect.h>
+#include <ofxsMultiThread.h>
+#include <ofxsUtilities.h>
+
 #include <boost/scoped_ptr.hpp>
+#include <boost/exception/info.hpp>
+#include <boost/exception/error_info.hpp>
 #include <boost/throw_exception.hpp>
 
 #include <cstdlib>
@@ -93,24 +97,27 @@ public:
 		{
 			setup( args );
 		}
-		catch( exception::ImageNotReady& e )
-		{
-			// stop the process but don't display an error
-			COUT_ERROR_DEBUG( boost::diagnostic_information( e ) );
-			progressEnd();
-			return;
-		}
 		catch( exception::Common& e )
 		{
-			COUT_ERROR( boost::diagnostic_information( e ) );
 			progressEnd();
-			throw;
+
+			// throw an error, only if the host is not trying to abort the rendering
+			// else return without error
+			if( ! _effect.abort() )
+			{
+				throw;
+			}
 		}
-		catch(... )
+		catch(...)
 		{
-			COUT_ERROR( boost::current_exception_diagnostic_information() );
 			progressEnd();
-			throw;
+
+			// throw an error, only if the host is not trying to abort the rendering
+			// else return without error
+			if( ! _effect.abort() )
+			{
+				throw;
+			}
 		}
 
 		// Call the base class process member

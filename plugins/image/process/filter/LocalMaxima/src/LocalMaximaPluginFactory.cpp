@@ -33,6 +33,7 @@ void LocalMaximaPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 	// plugin flags
 	desc.setSupportsTiles( kSupportTiles );
 	desc.setRenderThreadSafety( OFX::eRenderFullySafe );
+	desc.setHostFrameThreading( false );
 }
 
 /**
@@ -45,12 +46,12 @@ void LocalMaximaPluginFactory::describeInContext( OFX::ImageEffectDescriptor& de
 {
 	OFX::ClipDescriptor* srcClip = desc.defineClip( kOfxImageEffectSimpleSourceClipName );
 	srcClip->addSupportedComponent( OFX::ePixelComponentRGBA );
-	srcClip->addSupportedComponent( OFX::ePixelComponentAlpha );
+	srcClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	srcClip->setSupportsTiles( kSupportTiles );
 
-	// Create the mandated output clip
 	OFX::ClipDescriptor* dstClip = desc.defineClip( kOfxImageEffectOutputClipName );
 	dstClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	dstClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	dstClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	dstClip->setSupportsTiles( kSupportTiles );
 
@@ -60,6 +61,13 @@ void LocalMaximaPluginFactory::describeInContext( OFX::ImageEffectDescriptor& de
 	border->appendOption( kParamBorderBlack );
 //	border->appendOption( kParamBorderPadded );
 	border->setDefault( 0 );
+
+	OFX::ChoiceParamDescriptor* outputComponent = desc.defineChoiceParam( kParamOutputComponent );
+	outputComponent->setLabel( "Output component" );
+	outputComponent->appendOption( OFX::getImageEffectHostDescription()->supportsPixelComponent(OFX::ePixelComponentRGBA) ? kParamOutputComponentRGBA : "---" );
+	outputComponent->appendOption( OFX::getImageEffectHostDescription()->supportsPixelComponent(OFX::ePixelComponentRGB) ? kParamOutputComponentRGB : "---" );
+	outputComponent->appendOption( OFX::getImageEffectHostDescription()->supportsPixelComponent(OFX::ePixelComponentAlpha) ? kParamOutputComponentAlpha : "---" );
+	outputComponent->setIsSecret( OFX::getImageEffectHostDescription()->_supportedComponents.size() == 1 );
 }
 
 /**

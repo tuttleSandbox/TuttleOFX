@@ -3,9 +3,8 @@
 
 #include "LocalMaximaDefinitions.hpp"
 
-#include <tuttle/common/utils/global.hpp>
-#include <ofxsImageEffect.h>
-#include <boost/gil/gil_all.hpp>
+#include <tuttle/plugin/ImageEffectGilPlugin.hpp>
+
 
 namespace tuttle {
 namespace plugin {
@@ -20,30 +19,27 @@ struct LocalMaximaProcessParams
 /**
  * @brief LocalMaxima plugin
  */
-class LocalMaximaPlugin : public OFX::ImageEffect
+class LocalMaximaPlugin : public ImageEffectGilPlugin
 {
 public:
 	typedef float Scalar;
 public:
-    LocalMaximaPlugin( OfxImageEffectHandle handle );
+	LocalMaximaPlugin( OfxImageEffectHandle handle );
 
 public:
 	LocalMaximaProcessParams<Scalar> getProcessParams( const OfxPointD& renderScale = OFX::kNoRenderScale ) const;
 
-    void changedParam( const OFX::InstanceChangedArgs &args, const std::string &paramName );
+	void changedParam( const OFX::InstanceChangedArgs &args, const std::string &paramName );
 
+	void getClipPreferences( OFX::ClipPreferencesSetter& clipPreferences );
 	bool getRegionOfDefinition( const OFX::RegionOfDefinitionArguments& args, OfxRectD& rod );
 	void getRegionsOfInterest( const OFX::RegionsOfInterestArguments& args, OFX::RegionOfInterestSetter& rois );
-	bool isIdentity( const OFX::RenderArguments& args, OFX::Clip*& identityClip, double& identityTime );
 
-    void render( const OFX::RenderArguments &args );
+	void render( const OFX::RenderArguments &args );
 	
 public:
-    // do not need to delete these, the ImageEffect is managing them for us
-    OFX::Clip* _clipSrc; ///< Source image clip
-    OFX::Clip* _clipDst; ///< Destination image clip
-
 	OFX::ChoiceParam* _paramBorder;
+	OFX::ChoiceParam* _paramOutputComponent;
 };
 
 }

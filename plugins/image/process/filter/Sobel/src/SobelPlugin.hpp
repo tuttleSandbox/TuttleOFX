@@ -3,8 +3,7 @@
 
 #include "SobelDefinitions.hpp"
 
-#include <tuttle/common/utils/global.hpp>
-#include <ofxsImageEffect.h>
+#include <tuttle/plugin/ImageEffectGilPlugin.hpp>
 
 #include <boost/gil/gil_all.hpp>
 #include <boost/gil/extension/numeric/kernel.hpp>
@@ -39,7 +38,7 @@ struct SobelProcessParams
 /**
  * @brief Sobel plugin
  */
-class SobelPlugin : public OFX::ImageEffect
+class SobelPlugin : public ImageEffectGilPlugin
 {
 public:
 	typedef float Scalar;
@@ -51,18 +50,14 @@ public:
 
     void changedParam( const OFX::InstanceChangedArgs &args, const std::string &paramName );
 
+	void getClipPreferences( OFX::ClipPreferencesSetter& clipPreferences );
 	bool getRegionOfDefinition( const OFX::RegionOfDefinitionArguments& args, OfxRectD& rod );
 	void getRegionsOfInterest( const OFX::RegionsOfInterestArguments& args, OFX::RegionOfInterestSetter& rois );
 	bool isIdentity( const OFX::RenderArguments& args, OFX::Clip*& identityClip, double& identityTime );
 
     void render( const OFX::RenderArguments &args );
 	
-	
 public:
-    // do not need to delete these, the ImageEffect is managing them for us
-    OFX::Clip* _clipSrc; ///< Source image clip
-    OFX::Clip* _clipDst; ///< Destination image clip
-
 	OFX::Double2DParam* _paramSize;
 	OFX::BooleanParam* _paramNormalizedKernel;
 	OFX::BooleanParam* _paramReverseKernel;
@@ -74,6 +69,7 @@ public:
 	OFX::BooleanParam* _paramGradientNormManhattan;
 	OFX::BooleanParam* _paramComputeGradientDirection;
 	OFX::BooleanParam* _paramGradientDirectionAbs;
+    OFX::ChoiceParam* _paramOutputComponent;
 };
 
 }

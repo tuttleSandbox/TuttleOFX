@@ -1,19 +1,11 @@
 #include "JpegWriterPluginFactory.hpp"
 #include "JpegWriterDefinitions.hpp"
 #include "JpegWriterPlugin.hpp"
-#include "tuttle/plugin/context/Definition.hpp"
-#include <tuttle/plugin/ImageGilProcessor.hpp>
+
 #include <tuttle/plugin/exceptions.hpp>
 
-#include <string>
-#include <iostream>
-#include <stdio.h>
-#include <cmath>
-#include <cassert>
 #include <ofxsImageEffect.h>
 #include <ofxsMultiThread.h>
-#include <boost/gil/gil_all.hpp>
-#include <boost/scoped_ptr.hpp>
 
 namespace tuttle {
 namespace plugin {
@@ -40,8 +32,10 @@ void JpegWriterPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 	desc.addSupportedBitDepth( OFX::eBitDepthFloat );
 
 	// plugin flags
-	desc.setSupportsMultipleClipDepths( true );
+	desc.setRenderThreadSafety( OFX::eRenderFullySafe );
+	desc.setHostFrameThreading( false );
 	desc.setSupportsMultiResolution( false );
+	desc.setSupportsMultipleClipDepths( true );
 	desc.setSupportsTiles( kSupportTiles );
 }
 
@@ -56,11 +50,13 @@ void JpegWriterPluginFactory::describeInContext( OFX::ImageEffectDescriptor& des
 	OFX::ClipDescriptor* srcClip = desc.defineClip( kOfxImageEffectSimpleSourceClipName );
 
 	srcClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	srcClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	srcClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	srcClip->setSupportsTiles( kSupportTiles );
 
 	OFX::ClipDescriptor* dstClip = desc.defineClip( kOfxImageEffectOutputClipName );
 	dstClip->addSupportedComponent( OFX::ePixelComponentRGBA );
+	dstClip->addSupportedComponent( OFX::ePixelComponentRGB );
 	dstClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	dstClip->setSupportsTiles( kSupportTiles );
 
