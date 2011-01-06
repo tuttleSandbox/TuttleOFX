@@ -1,24 +1,24 @@
-#include "CristoPluginFactory.hpp"
-#include "CristoPlugin.hpp"
-#include "CristoDefinitions.hpp"
+#include "Move2DPluginFactory.hpp"
+#include "Move2DPlugin.hpp"
+#include "Move2DDefinitions.hpp"
 
 #include <limits>
 
 namespace tuttle {
 namespace plugin {
-namespace cristo {
+namespace move2D {
 
-static const bool kSupportTiles = true;
+static const bool kSupportTiles = false;
 
 
 /**
  * @brief Function called to describe the plugin main features.
  * @param[in, out] desc Effect descriptor
  */
-void CristoPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
+void Move2DPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
 {
-	desc.setLabels( "Cristo", "Cristo",
-		            "Cristo" );
+	desc.setLabels( "TuttleMove2D", "TuttleMove2D",
+		            "Move2D" );
 	desc.setPluginGrouping( "tuttle" );
 
 	// add the supported contexts, only filter at the moment
@@ -40,7 +40,7 @@ void CristoPluginFactory::describe( OFX::ImageEffectDescriptor& desc )
  * @param[in, out]   desc       Effect descriptor
  * @param[in]        context    Application context
  */
-void CristoPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
+void Move2DPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
                                                   OFX::EContext context )
 {
 	OFX::ClipDescriptor* srcClip = desc.defineClip( kOfxImageEffectSimpleSourceClipName );
@@ -56,18 +56,10 @@ void CristoPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
 	dstClip->addSupportedComponent( OFX::ePixelComponentAlpha );
 	dstClip->setSupportsTiles( kSupportTiles );
 
-	OFX::ParametricParamDescriptor* curves = desc.defineParametricParam( kParamColorSelection );
-	curves->setDimension( nbCurves );
-	curves->setDimensionLabel( kParamColorSelectionRed, 0 );
-	curves->setDimensionLabel( kParamColorSelectionGreen, 1 );
-	curves->setDimensionLabel( kParamColorSelectionBlue, 2 );
-	curves->setDimensionLabel( kParamColorSelectionHue, 3 );
-	curves->setDimensionLabel( kParamColorSelectionSaturation, 4 );
-	curves->setDimensionLabel( kParamColorSelectionLightness, 5 );
-	curves->setHint( "Color selection" );
+	OFX::Double2DParamDescriptor* translation = desc.defineDouble2DParam( kParamTranslation );
+	translation->setLabel( "Translation" );
+	translation->setDefault( 0, 0 );
 
-	OFX::PushButtonParamDescriptor* helpButton = desc.definePushButtonParam( kParamHelpButton );
-	helpButton->setLabel( "Help" );
 }
 
 /**
@@ -76,10 +68,10 @@ void CristoPluginFactory::describeInContext( OFX::ImageEffectDescriptor& desc,
  * @param[in] context Application context
  * @return  plugin instance
  */
-OFX::ImageEffect* CristoPluginFactory::createInstance( OfxImageEffectHandle handle,
+OFX::ImageEffect* Move2DPluginFactory::createInstance( OfxImageEffectHandle handle,
                                                             OFX::EContext context )
 {
-	return new CristoPlugin( handle );
+	return new Move2DPlugin( handle );
 }
 
 }

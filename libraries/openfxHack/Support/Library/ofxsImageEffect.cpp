@@ -493,7 +493,7 @@ ImageEffectDescriptor::ImageEffectDescriptor( OfxImageEffectHandle handle )
 	OfxParamSetHandle paramSetHandle;
 	stat = OFX::Private::gEffectSuite->getParamSet( handle, &paramSetHandle );
 	throwSuiteStatusException( stat );
-	setParamSetHandle( paramSetHandle );
+	setOfxParamSetHandle( paramSetHandle );
 }
 
 /** @brief dtor */
@@ -517,6 +517,11 @@ void ImageEffectDescriptor::setLabels( const std::string& label, const std::stri
 	_effectProps.propSetString( kOfxPropLabel, label );
 	_effectProps.propSetString( kOfxPropShortLabel, shortLabel, false );
 	_effectProps.propSetString( kOfxPropLongLabel, longLabel, false );
+}
+
+void ImageEffectDescriptor::setDescription( const std::string& description )
+{
+	_effectProps.propSetString( kOfxPropPluginDescription, description, false );
 }
 
 /** @brief Set the plugin grouping */
@@ -773,7 +778,7 @@ Image::Image( OfxPropertySetHandle props )
 	_uniqueID = _imageProps.propGetString( kOfxImagePropUniqueIdentifier );
 
 	//	std::string tuttleFullName = _imageProps.propGetString( "TuttleFullName" );
-	//	COUT("tuttleFullName: " << tuttleFullName );
+	//	TUTTLE_COUT("tuttleFullName: " << tuttleFullName );
 
 	_renderScale.x = _imageProps.propGetDouble( kOfxImageEffectPropRenderScale, 0 );
 	_renderScale.y = _imageProps.propGetDouble( kOfxImageEffectPropRenderScale, 1 );
