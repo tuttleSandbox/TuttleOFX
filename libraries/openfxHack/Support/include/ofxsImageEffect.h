@@ -303,7 +303,7 @@ public:
 		}
 		else
 		{
-			COUT_WARNING("The host doesn't support multiple clip depths, but didn't define supported pixel depth. (size: " << _supportedPixelDepths.size() << ")" );
+			TUTTLE_COUT_WARNING("The host doesn't support multiple clip depths, but didn't define supported pixel depth. (size: " << _supportedPixelDepths.size() << ")" );
 			return eBitDepthFloat;
 		}
 	}
@@ -408,6 +408,8 @@ public:
 	/** @brief, set the label properties in a plugin */
 	void setLabels( const std::string& label, const std::string& shortLabel, const std::string& longLabel );
 	void setLabel( const std::string& label ) { setLabels(label, label, label); }
+
+	void setDescription( const std::string& description );
 
 	/** @brief Set the plugin grouping, defaults to "" */
 	void setPluginGrouping( const std::string& group );
