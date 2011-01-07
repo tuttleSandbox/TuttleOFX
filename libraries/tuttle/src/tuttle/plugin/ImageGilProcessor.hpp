@@ -23,19 +23,19 @@
 namespace tuttle {
 namespace plugin {
 
-template<class View>
-View getView( OFX::Image* img, const OfxRectI& rod );
+template<class DView>
+DView getView( OFX::Image* img, const OfxRectI& rod );
 
 /**
  * @brief Base class that can be used to process images of any type using boost::gil library view to access images.
  */
-template <class View>
+template <class DView>
 class ImageGilProcessor : public OFX::MultiThread::Processor
 	, public tuttle::plugin::OfxProgress
 {
 public:
-	typedef typename View::value_type Pixel;
-	typedef typename image_from_view<View>::type Image;
+	typedef typename DView::value_type DPixel;
+	typedef typename image_from_view<DView>::type DImage;
 
 private:
 	unsigned int _nbThreads;
@@ -47,7 +47,7 @@ protected:
 	boost::scoped_ptr<OFX::Image> _dst;
 	OfxRectI _dstPixelRod;
 	OfxPointI _dstPixelRodSize;
-	View _dstView; ///< image to process into
+	DView _dstView; ///< image to process into
 
 public:
 	/** @brief ctor */
@@ -81,7 +81,7 @@ public:
 		#ifndef TUTTLE_PRODUCTION
 		// init dst buffer with red to highlight uninitialized pixels
 		const OfxRectI dstBounds = this->translateRoWToOutputClipCoordinates( _dst->getBounds() );
-		View dstToFill           = boost::gil::subimage_view( _dstView,
+		DView dstToFill           = boost::gil::subimage_view( _dstView,
 		                                                      dstBounds.x1, dstBounds.y1,
 		                                                      dstBounds.x2 - dstBounds.x1, dstBounds.y2 - dstBounds.y1 );
 		const boost::gil::rgba32f_pixel_t errorColor( 1.0, 0.0, 0.0, 1.0 );
@@ -127,9 +127,9 @@ public:
 	/**
 	 * @brief Return a full gil view of an image.
 	 */
-	View getView( OFX::Image* img, const OfxRectI& rod ) const
+	DView getView( OFX::Image* img, const OfxRectI& rod ) const
 	{
-		return tuttle::plugin::getView<View>( img, rod );
+		return tuttle::plugin::getView<DView>( img, rod );
 	}
 
 	/** @brief overridden from OFX::MultiThread::Processor. This function is called once on each SMP thread by the base class */
@@ -163,8 +163,8 @@ public:
 	virtual void process();
 };
 
-template <class View>
-ImageGilProcessor<View>::ImageGilProcessor( OFX::ImageEffect& effect )
+template <class DView>
+ImageGilProcessor<DView>::ImageGilProcessor( OFX::ImageEffect& effect )
 	: OfxProgress( effect )
 	, _nbThreads( 0 )
 	,                 // auto, maximum allowable number of CPUs will be used
@@ -178,12 +178,12 @@ ImageGilProcessor<View>::ImageGilProcessor( OFX::ImageEffect& effect )
 	_clipDst = effect.fetchClip( kOfxImageEffectOutputClipName );
 }
 
-template <class View>
-ImageGilProcessor<View>::~ImageGilProcessor()
+template <class DView>
+ImageGilProcessor<DView>::~ImageGilProcessor()
 {}
 
-template <class View>
-void ImageGilProcessor<View>::process( void )
+template <class DView>
+void ImageGilProcessor<DView>::process( void )
 {
 	// is it OK ?
 	if( _renderArgs.renderWindow.x2 - _renderArgs.renderWindow.x1 == 0 ||
@@ -209,11 +209,11 @@ void ImageGilProcessor<View>::process( void )
  *            but there is a bug in nuke (which return the bounds),
  *            so we need to use the rod of the clip and not from the image.
  */
-template<class View>
-View getView( OFX::Image* img, const OfxRectI& rod )
+template<class DView>
+DView getView( OFX::Image* img, const OfxRectI& rod )
 {
 	using namespace boost::gil;
-	typedef typename View::value_type Pixel;
+	typedef typename DView::value_type DPixel;
 
 	//	OfxRectI imgrod = img->getRegionOfDefinition(); // bug in nuke returns bounds... not the clip rod with renderscale...
 	OfxRectI bounds = img->getBounds();
@@ -224,8 +224,8 @@ View getView( OFX::Image* img, const OfxRectI& rod )
 	                                    bounds.y2 - bounds.y1 );
 
 	// Build views
-	View tileView = interleaved_view( tileSize.x, tileSize.y,
-	                                  static_cast<Pixel*>( img->getPixelData() ),
+	DView tileView = interleaved_view( tileSize.x, tileSize.y,
+	                                  static_cast<DPixel*>( img->getPixelData() ),
 	                                  img->getRowBytes() );
 
 	// if the tile is equals to the full image

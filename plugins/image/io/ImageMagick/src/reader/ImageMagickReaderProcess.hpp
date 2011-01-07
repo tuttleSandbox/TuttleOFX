@@ -25,7 +25,7 @@ public:
 
 	void multiThreadProcessImages( const OfxRectI& procWindowRoW );
 
-	View& readImage( View& dst, const std::string& filepath );
+	View& readImageFile( View& dst, const std::string& filepath );
 };
 
 }
