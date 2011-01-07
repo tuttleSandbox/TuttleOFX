@@ -76,12 +76,14 @@
    }
  */
 
+#ifndef WINDOWS /// @todo tuttle: temporary removed under windows....
 #if ( MAGICKCORE_QUANTUM_DEPTH == 8 )
  #warning "MAGICKCORE_QUANTUM_DEPTH is 8"
 #elif ( MAGICKCORE_QUANTUM_DEPTH == 16 )
  #warning "MAGICKCORE_QUANTUM_DEPTH is 16"
 #elif ( MAGICKCORE_QUANTUM_DEPTH == 32 )
  #warning "MAGICKCORE_QUANTUM_DEPTH is 32"
+#endif
 #endif
 
 namespace boost {
@@ -136,7 +138,7 @@ void ImageMagickReaderProcess<View>::multiThreadProcessImages( const OfxRectI& p
 {
 	// no tiles and no multithreading supported
 	BOOST_ASSERT( procWindowRoW == this->_dstPixelRod );
-	readImage( this->_dstView, _plugin.getProcessParams( this->_renderArgs.time )._filepath );
+	readImageFile( this->_dstView, _plugin.getProcessParams( this->_renderArgs.time )._filepath );
 }
 
 template<class SView, class DView>
@@ -155,7 +157,7 @@ void copy_and_convert_from_buffer( Image* image, DView& dst )
 /**
  */
 template<class View>
-View& ImageMagickReaderProcess<View>::readImage( View& dst, const std::string& filepath )
+View& ImageMagickReaderProcess<View>::readImageFile( View& dst, const std::string& filepath )
 {
 	BOOST_STATIC_ASSERT( sizeof( Quantum ) == 2 ); // imagemagick compiled in 16 bits not 8 !
 

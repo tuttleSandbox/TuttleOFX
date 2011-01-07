@@ -61,7 +61,7 @@ int main( int argc, char** argv )
                   "normalizeParam1 [0.0;1.0]?")
             ("gamma", po::value<float>(&paramGamma)->default_value(0.1f), 
                   "normalizeParam1 [0.0;1.0]?")
-            ("src", po::value<std::string>(&src)->default_value("data/key/source.jpg"), 
+            ("src", po::value<std::string>(&src)->default_value("data/key/source.png"), 
                   "source image path")
             ("bg", po::value<std::string>(&bg)->default_value("data/key/background.jpg"), 
                   "background image path")
@@ -123,22 +123,22 @@ int main( int argc, char** argv )
 		
 		
 		using namespace tuttle::host;
-		COUT( "__________________________________________________0" );
+		TUTTLE_COUT( "__________________________________________________0" );
 		// Core::instance().getPluginCache().addDirectoryToPath( "/path/to/plugins" );
 		// Core::instance().getPluginCache().scanPluginFiles();
 		Core::instance().preload();
 
-		COUT( Core::instance().getImageEffectPluginCache() );
+		TUTTLE_COUT( Core::instance().getImageEffectPluginCache() );
 
-		COUT( "__________________________________________________1" );
+		TUTTLE_COUT( "__________________________________________________1" );
 
 		/*
 		probleme de taille 
 		*/
 		
 		Graph g;
-		Graph::Node& source     = g.createNode( "fr.tuttle.pngreader" );
-		Graph::Node& cadre      = g.createNode( "fr.tuttle.pngreader" );
+		Graph::Node& source     = g.createNode( "fr.tuttle.imagemagickreader" );
+		Graph::Node& cadre      = g.createNode( "fr.tuttle.jpegreader" );
 		Graph::Node& background = g.createNode( "fr.tuttle.jpegreader" );
 		Graph::Node& sourceBd = g.createNode( "fr.tuttle.bitdepth" );
 		Graph::Node& cadreBd = g.createNode( "fr.tuttle.bitdepth" );
@@ -151,7 +151,7 @@ int main( int argc, char** argv )
 		Graph::Node& write    = g.createNode( "fr.tuttle.jpegwriter" );
 		Graph::Node& writeKey    = g.createNode( "fr.tuttle.jpegwriter" );
 
-		COUT( "__________________________________________________2" );
+		TUTTLE_COUT( "__________________________________________________2" );
 		// Setup parameters
 		source.getParam( "filename" ).set( src );
 		cadre.getParam( "filename" ).set( frame );
@@ -170,7 +170,7 @@ int main( int argc, char** argv )
 		colorSuppr.getParam( "blueRate" ).set( suppB );
 		colorSuppr.getParam( "redRate" ).set( suppR );
 		colorSuppr.getParam( "output" ).set( 2 ); // 2: modifie l'image et sort la couche alpha
-		//COUT_VAR(invertAlpha);
+		//TUTTLE_COUT_VAR(invertAlpha);
 		invertAlpha.getParam( "processR" ).set( false );
 		invertAlpha.getParam( "processG" ).set( false );
 		invertAlpha.getParam( "processB" ).set( false );
@@ -189,7 +189,7 @@ int main( int argc, char** argv )
 		writeKey.getParam( "premult" ).set( false );
 		writeKey.getParam( "filename" ).set( "data/key/outputKey.jpg" );
 		
-		COUT( "__________________________________________________3" );
+		TUTTLE_COUT( "__________________________________________________3" );
 		// passage des trois images 8 bits => float
 		g.connect( source, sourceBd );
 		g.connect( cadre, cadreBd );
@@ -209,11 +209,11 @@ int main( int argc, char** argv )
 		std::list<std::string> outputs;
 		outputs.push_back( write.getName() );
 		outputs.push_back( writeKey.getName() );
-		COUT( "__________________________________________________4 process" );
+		TUTTLE_COUT( "__________________________________________________4 process" );
 		g.compute( outputs, 0 );
 //		g.compute( write, 0 );
 //
-		COUT( "__________________________________________________5" );
+		TUTTLE_COUT( "__________________________________________________5" );
 	}
 	catch( tuttle::exception::Common& e )
 	{
