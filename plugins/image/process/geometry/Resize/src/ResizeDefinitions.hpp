@@ -8,8 +8,8 @@ namespace tuttle {
 namespace plugin {
 namespace resize {
 
-const static std::string kParamSize = "Size";
-const static std::string kParamScale = "Scale";
+const static std::string kParamSize = "size";
+const static std::string kParamScale = "scale";
 
 
 }

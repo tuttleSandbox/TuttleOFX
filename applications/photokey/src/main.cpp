@@ -35,7 +35,7 @@ int main( int argc, char** argv )
 	std::set_unexpected( &sam_unexpected );
 	try
 	{
-        float suppR, suppG, suppB, normalizeParam1,paramGamma;
+        float suppR, suppG, suppB, normalizeParam1,paramGamma, resizeW, resizeH, moveX, moveY;
         std::string config_file = "data/key/config.ini";
         std::string src, bg, frame, out;
     
@@ -60,12 +60,20 @@ int main( int argc, char** argv )
             ("normalizeParam1,np1", po::value<float>(&normalizeParam1)->default_value(0.4f), 
                   "normalizeParam1 [0.0;1.0]?")
             ("gamma", po::value<float>(&paramGamma)->default_value(0.1f), 
-                  "normalizeParam1 [0.0;1.0]?")
+                  "gamma [0.0;1.0]?")
+            ("resizeW", po::value<float>(&resizeW)->default_value(400.f), 
+                  "resize height (px)")
+            ("resizeH", po::value<float>(&resizeH)->default_value(300.f), 
+                  "resize width (px)")
+            ("moveX", po::value<float>(&moveX)->default_value(0.f), 
+                  "translate X (px)")
+            ("moveY", po::value<float>(&moveY)->default_value(0.f), 
+                  "translate X (px)")
             ("src", po::value<std::string>(&src)->default_value("data/key/source.png"), 
                   "source image path")
             ("bg", po::value<std::string>(&bg)->default_value("data/key/background.jpg"), 
                   "background image path")
-            ("frame", po::value<std::string>(&frame)->default_value("data/key/foreground.jpg"), 
+            ("frame", po::value<std::string>(&frame)->default_value("data/key/cadre.png"), 
                   "foregroung image path")
             ("out", po::value<std::string>(&out)->default_value("data/key/outpout.jpg"), 
                   "outpout image path")
@@ -131,35 +139,33 @@ int main( int argc, char** argv )
 		TUTTLE_COUT( Core::instance().getImageEffectPluginCache() );
 
 		TUTTLE_COUT( "__________________________________________________1" );
-
-		/*
-		probleme de taille 
-		*/
 		
 		Graph g;
-		Graph::Node& source     = g.createNode( "fr.tuttle.imagemagickreader" );
-		Graph::Node& cadre      = g.createNode( "fr.tuttle.jpegreader" );
-		Graph::Node& background = g.createNode( "fr.tuttle.jpegreader" );
-		Graph::Node& sourceBd = g.createNode( "fr.tuttle.bitdepth" );
-		Graph::Node& cadreBd = g.createNode( "fr.tuttle.bitdepth" );
-		Graph::Node& backgroundBd = g.createNode( "fr.tuttle.bitdepth" );
+		Graph::Node& source     = g.createNode( "fr.tuttle.imagemagickreader" ); // /!\ imagemagickreader = mirroir haut/bas
+		Graph::Node& cadre      = g.createNode( "fr.tuttle.imagemagickreader" );
+		Graph::Node& background = g.createNode( "fr.tuttle.imagemagickreader" );
+		Graph::Node& sourceBd 	= g.createNode( "fr.tuttle.bitdepth" );
+		Graph::Node& cadreBd 	= g.createNode( "fr.tuttle.bitdepth" );
+		Graph::Node& backgroundBd=g.createNode( "fr.tuttle.bitdepth" );
 		Graph::Node& colorSuppr = g.createNode( "fr.tuttle.duranduboi.colorsuppress" ); // suppression BG
-		Graph::Node& invertAlpha  = g.createNode( "fr.tuttle.invert" );
-		Graph::Node& normalize = g.createNode( "fr.tuttle.duranduboi.normalize" ); // amelio qualité masque alpha
-		Graph::Node& gamma = g.createNode( "fr.tuttle.gamma" ); // amelio qualité masque alpha
-		Graph::Node& merge  = g.createNode( "fr.tuttle.merge" );
-		Graph::Node& write    = g.createNode( "fr.tuttle.jpegwriter" );
-		Graph::Node& writeKey    = g.createNode( "fr.tuttle.jpegwriter" );
+		Graph::Node& invertAlpha= g.createNode( "fr.tuttle.invert" );
+		Graph::Node& invertAlpha2=g.createNode( "fr.tuttle.invert" );
+		Graph::Node& normalize 	= g.createNode( "fr.tuttle.duranduboi.normalize" ); // amelio qualité masque alpha
+		Graph::Node& gamma  	= g.createNode( "fr.tuttle.gamma" ); // amelio qualité masque alpha
+		Graph::Node& resize 	= g.createNode( "fr.tuttle.resize" );
+		Graph::Node& move2d 	= g.createNode( "fr.tuttle.move2d" );
+		Graph::Node& merge  	= g.createNode( "fr.tuttle.merge" );
+		Graph::Node& merge2 	= g.createNode( "fr.tuttle.merge" );
+		Graph::Node& write  	= g.createNode( "fr.tuttle.jpegwriter" );
+		Graph::Node& writeKey	= g.createNode( "fr.tuttle.jpegwriter" );
+		Graph::Node& writeMerge1	= g.createNode( "fr.tuttle.jpegwriter" );
+		//Graph::Node& writeKey    = g.createNode( "fr.tuttle.imagemagickwriter" ); // aucun effet, setParam doit pas fonctionner
 
 		TUTTLE_COUT( "__________________________________________________2" );
 		// Setup parameters
 		source.getParam( "filename" ).set( src );
 		cadre.getParam( "filename" ).set( frame );
 		background.getParam( "filename" ).set( bg );
-
-		//float param1 = (argc > 1)? atof(argv[1]) : 0.4;
-		//float param2 = (argc > 2)? atof(argv[2]) : 1.0;
-		//float param3 = (argc > 3)? atof(argv[3]) : 0.0;
 		
 		// passe de 8 bits à 32 (floats)
 		sourceBd.getParam( "outputBitDepth" ).set( 3 );
@@ -175,19 +181,31 @@ int main( int argc, char** argv )
 		invertAlpha.getParam( "processG" ).set( false );
 		invertAlpha.getParam( "processB" ).set( false );
 		invertAlpha.getParam( "processA" ).set( true );
+		invertAlpha2.getParam( "processR" ).set( false );
+		invertAlpha2.getParam( "processG" ).set( false );
+		invertAlpha2.getParam( "processB" ).set( false );
+		invertAlpha2.getParam( "processA" ).set( true );
 		normalize.getParam( "mode" ).set( 1 );
 		normalize.getParam( "srcColorMin" ).setAtIndex( normalizeParam1, 3 ); // 0.2,  3
 		normalize.getParam( "processR" ).set( false );
 		normalize.getParam( "processG" ).set( false );
 		normalize.getParam( "processB" ).set( false );
 		normalize.getParam( "processA" ).set( true );
+		
+		resize.getParam( "size" ).set( resizeW, resizeH );
+		move2d.getParam( "translation" ).set( moveX, moveY );
+		
 		gamma.getParam( "gammaType" ).set( "RGBA" );
 		gamma.getParam( "alpha" ).set( paramGamma );
 		merge.getParam( "mergingFunction" ).set( 19 );
+		//merge.getParam( "rod" ).set( "B" ); // TODO
+		merge2.getParam( "mergingFunction" ).set( 19 );
 		write.getParam( "premult" ).set( false );
 		write.getParam( "filename" ).set( out );
 		writeKey.getParam( "premult" ).set( false );
 		writeKey.getParam( "filename" ).set( "data/key/outputKey.jpg" );
+		writeMerge1.getParam( "premult" ).set( false );
+		writeMerge1.getParam( "filename" ).set( "data/key/outputMerge1.jpg" );
 		
 		TUTTLE_COUT( "__________________________________________________3" );
 		// passage des trois images 8 bits => float
@@ -199,16 +217,37 @@ int main( int argc, char** argv )
 		g.connect( sourceBd, colorSuppr );
 		g.connect( colorSuppr, invertAlpha );
 		// amélio Alpha
-		g.connect( invertAlpha, gamma /*normalize*/ );
+		g.connect( invertAlpha, gamma );
 
-		g.connect( /*normalize*/ gamma, merge.getClip("A") );
-		g.connect( backgroundBd, merge.getClip("B") );
-		g.connect( merge, write );
+		std::cout<< "resizeW:" <<resizeW <<" resizeH:" <<resizeH <<" moveX:" <<moveX <<" moveY:" <<moveY <<std::endl;
+		if(resizeW<1.f && resizeH < 1.f && moveX < 0.5f && moveY < 0.5f)
+		{
+			TUTTLE_COUT( "no resize, no move" );
+			g.connect( gamma, merge.getClip("A") );
+			//g.connect( invertAlpha, merge.getClip("A") ); // test
+		}
+		else
+		{
+			TUTTLE_COUT( "resize + move" );
+			g.connect( gamma, resize );
+			g.connect( resize, move2d );
+			
+			g.connect( move2d, merge.getClip("A") );
+		}
+		g.connect( backgroundBd, merge.getClip("B") ); // TODO fix alpha problem merge
+		
+		g.connect( cadreBd, invertAlpha2 );
+		g.connect( invertAlpha2, merge2.getClip("A") );
+		g.connect( merge, merge2.getClip("B") );
+		
+		g.connect( merge2, write );
 		g.connect( invertAlpha, writeKey );
+		g.connect( merge, writeMerge1 ); // test 
 
 		std::list<std::string> outputs;
 		outputs.push_back( write.getName() );
 		outputs.push_back( writeKey.getName() );
+		outputs.push_back( writeMerge1.getName() );
 		TUTTLE_COUT( "__________________________________________________4 process" );
 		g.compute( outputs, 0 );
 //		g.compute( write, 0 );
@@ -217,12 +256,12 @@ int main( int argc, char** argv )
 	}
 	catch( tuttle::exception::Common& e )
 	{
-		std::cout << "Tuttle Exception : main de sam." << std::endl;
+		std::cerr << "Tuttle Exception : main de photokey." << std::endl;
 		std::cerr << boost::diagnostic_information( e );
 	}
 	catch(... )
 	{
-		std::cerr << "Exception ... : main de sam." << std::endl;
+		std::cerr << "Exception ... : main de photokey." << std::endl;
 		std::cerr << boost::current_exception_diagnostic_information();
 
 	}
