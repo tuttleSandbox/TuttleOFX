@@ -35,6 +35,10 @@ int main( int argc, char** argv )
 	std::set_unexpected( &sam_unexpected );
 	try
 	{
+		/********************************************************
+						ARGUMENTS / CONFIG OPTIONS
+		*********************************************************/
+		
         float suppR, suppG, suppB, normalizeParam1,paramGamma, resizeW, resizeH, moveX, moveY;
         std::string config_file = "data/key/config.ini";
         std::string src, bg, frame, out;
@@ -75,8 +79,8 @@ int main( int argc, char** argv )
                   "background image path")
             ("frame", po::value<std::string>(&frame)->default_value("data/key/cadre.png"), 
                   "foregroung image path")
-            ("out", po::value<std::string>(&out)->default_value("data/key/outpout.jpg"), 
-                  "outpout image path")
+            ("out", po::value<std::string>(&out)->default_value("data/key/output.jpg"), 
+                  "output image path")
             ;
 
         // Hidden options, will be allowed both on command line and
@@ -129,6 +133,9 @@ int main( int argc, char** argv )
 
         std::cout << "suppress: R=" << suppR << ", G=" << suppG << ", B=" << suppB << "\n";  
 		
+		/********************************************************
+							PLUGINS GRAPHE
+		*********************************************************/
 		
 		using namespace tuttle::host;
 		TUTTLE_COUT( "__________________________________________________0" );
@@ -138,7 +145,7 @@ int main( int argc, char** argv )
 
 		TUTTLE_COUT( Core::instance().getImageEffectPluginCache() );
 
-		TUTTLE_COUT( "__________________________________________________1" );
+		TUTTLE_COUT( "__________________________________________________1 Nodes Creation" );
 		
 		Graph g;
 		Graph::Node& source     = g.createNode( "fr.tuttle.imagemagickreader" ); // /!\ imagemagickreader = mirroir haut/bas
@@ -161,7 +168,7 @@ int main( int argc, char** argv )
 		Graph::Node& writeMerge1	= g.createNode( "fr.tuttle.jpegwriter" );
 		//Graph::Node& writeKey    = g.createNode( "fr.tuttle.imagemagickwriter" ); // aucun effet, setParam doit pas fonctionner
 
-		TUTTLE_COUT( "__________________________________________________2" );
+		TUTTLE_COUT( "__________________________________________________2 Param nodes" );
 		// Setup parameters
 		source.getParam( "filename" ).set( src );
 		cadre.getParam( "filename" ).set( frame );
@@ -207,7 +214,7 @@ int main( int argc, char** argv )
 		writeMerge1.getParam( "premult" ).set( false );
 		writeMerge1.getParam( "filename" ).set( "data/key/outputMerge1.jpg" );
 		
-		TUTTLE_COUT( "__________________________________________________3" );
+		TUTTLE_COUT( "__________________________________________________3 Connect nodes" );
 		// passage des trois images 8 bits => float
 		g.connect( source, sourceBd );
 		g.connect( cadre, cadreBd );
@@ -252,17 +259,19 @@ int main( int argc, char** argv )
 		g.compute( outputs, 0 );
 //		g.compute( write, 0 );
 //
-		TUTTLE_COUT( "__________________________________________________5" );
+		TUTTLE_COUT( "__________________________________________________5 terminated :)" );
 	}
 	catch( tuttle::exception::Common& e )
 	{
 		std::cerr << "Tuttle Exception : main de photokey." << std::endl;
 		std::cerr << boost::diagnostic_information( e );
+		return -1;
 	}
 	catch(... )
 	{
 		std::cerr << "Exception ... : main de photokey." << std::endl;
 		std::cerr << boost::current_exception_diagnostic_information();
+		return -2;
 
 	}
 
