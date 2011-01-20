@@ -13,7 +13,7 @@ void getPluginIDs( OFX::PluginFactoryArray& ids )
 	mAppendPluginFactory( ids, tuttle::plugin::imagemagick::reader::ImageMagickReaderPluginFactory, "fr.tuttle.imagemagickreader" );
 	// Nothing for the moment
 	// Is it possible to get dynamically the list of parameters of each writers ?
-	mAppendPluginFactory( ids, tuttle::plugin::imagemagick::writer::ImageMagickWriterPluginFactory, "fr.tuttle.imagemagickwriter" );
+	//mAppendPluginFactory( ids, tuttle::plugin::imagemagick::writer::ImageMagickWriterPluginFactory, "fr.tuttle.imagemagickwriter" );
 }
 
 }

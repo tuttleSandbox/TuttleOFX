@@ -6,7 +6,6 @@ namespace po = boost::program_options;
 #include <fstream>
 #include <iterator>
 
-
 void sam_terminate( void )
 {
 	std::cerr << "Sorry, Sam has encountered a fatal error." << std::endl;
@@ -39,7 +38,8 @@ int main( int argc, char** argv )
 						ARGUMENTS / CONFIG OPTIONS
 		*********************************************************/
 		
-        float suppR, suppG, suppB, normalizeParam1,paramGamma, resizeW, resizeH, moveX, moveY;
+        float suppR, suppG, suppB, normalizeParam1,paramGamma, resizeW, resizeH, ratio;
+		int moveX, moveY, bgExtract;
         std::string config_file = "data/key/config.ini";
         std::string src, bg, frame, out;
     
@@ -55,6 +55,8 @@ int main( int argc, char** argv )
         // config file
         po::options_description config("Configuration");
         config.add_options()
+            ("bg-extract,r", po::value<int>(&bgExtract)->default_value(1), 
+                  "1: Effectuer l'extracion, 0:ne pas extraire le fond")
             ("sppress-R,r", po::value<float>(&suppR)->default_value(0.0f), 
                   "red suppression level [0.0;1.0]")
             ("sppress-G,g", po::value<float>(&suppG)->default_value(1.0f), 
@@ -64,15 +66,17 @@ int main( int argc, char** argv )
             ("normalizeParam1,np1", po::value<float>(&normalizeParam1)->default_value(0.4f), 
                   "normalizeParam1 [0.0;1.0]?")
             ("gamma", po::value<float>(&paramGamma)->default_value(0.1f), 
-                  "gamma [0.0;1.0]?")
-            ("resizeW", po::value<float>(&resizeW)->default_value(400.f), 
-                  "resize height (px)")
-            ("resizeH", po::value<float>(&resizeH)->default_value(300.f), 
-                  "resize width (px)")
-            ("moveX", po::value<float>(&moveX)->default_value(0.f), 
+                  "srcGamma [0.0;1.0]?")
+            ("resizeW", po::value<float>(&resizeW)->default_value(0.f), 
+                  "srcResize height (px)")
+            ("resizeH", po::value<float>(&resizeH)->default_value(0.f), 
+                  "srcResize width (px)")
+            ("moveX", po::value<int>(&moveX)->default_value(0), 
                   "translate X (px)")
-            ("moveY", po::value<float>(&moveY)->default_value(0.f), 
+            ("moveY", po::value<int>(&moveY)->default_value(0), 
                   "translate X (px)")
+            ("ratio", po::value<float>(&ratio)->default_value(0.f), 
+                  "image ratio for crop")
             ("src", po::value<std::string>(&src)->default_value("data/key/source.png"), 
                   "source image path")
             ("bg", po::value<std::string>(&bg)->default_value("data/key/background.jpg"), 
@@ -87,10 +91,9 @@ int main( int argc, char** argv )
         // in config file, but will not be shown to the user.
         po::options_description hidden("Hidden options");
         hidden.add_options()
-            ("input-file", po::value< std::vector<std::string> >(), "input file")
+            ("nothing", po::value< std::vector<std::string> >(), "nothing")
             ;
 
-        
         po::options_description cmdline_options;
         cmdline_options.add(generic).add(config).add(hidden);
 
@@ -101,7 +104,7 @@ int main( int argc, char** argv )
         visible.add(generic).add(config);
         
         po::positional_options_description p;
-        p.add("input-file", -1);
+        p.add("nothing", -1);
         
         po::variables_map vm;
         store(po::command_line_parser(argc, argv).
@@ -125,10 +128,10 @@ int main( int argc, char** argv )
             return 0;
         }
 
-        if (vm.count("input-file"))
+        if (vm.count("nothing"))
         {
-            std::cout << "Input files are: " 
-                 << vm["input-file"].as< std::vector<std::string> >() << "\n";
+            std::cout << "Unused argument(s): " 
+                 << vm["nothing"].as< std::vector<std::string> >() << "\n";
         }
 
         std::cout << "suppress: R=" << suppR << ", G=" << suppG << ", B=" << suppB << "\n";  
@@ -139,7 +142,7 @@ int main( int argc, char** argv )
 		
 		using namespace tuttle::host;
 		TUTTLE_COUT( "__________________________________________________0" );
-		// Core::instance().getPluginCache().addDirectoryToPath( "/path/to/plugins" );
+		Core::instance().getPluginCache().addDirectoryToPath( "./plugins" );
 		// Core::instance().getPluginCache().scanPluginFiles();
 		Core::instance().preload();
 
@@ -148,24 +151,28 @@ int main( int argc, char** argv )
 		TUTTLE_COUT( "__________________________________________________1 Nodes Creation" );
 		
 		Graph g;
-		Graph::Node& source     = g.createNode( "fr.tuttle.imagemagickreader" ); // /!\ imagemagickreader = mirroir haut/bas
+		Graph::Node& source     = g.createNode( "fr.tuttle.imagemagickreader" ); //
 		Graph::Node& cadre      = g.createNode( "fr.tuttle.imagemagickreader" );
 		Graph::Node& background = g.createNode( "fr.tuttle.imagemagickreader" );
 		Graph::Node& sourceBd 	= g.createNode( "fr.tuttle.bitdepth" );
 		Graph::Node& cadreBd 	= g.createNode( "fr.tuttle.bitdepth" );
 		Graph::Node& backgroundBd=g.createNode( "fr.tuttle.bitdepth" );
 		Graph::Node& colorSuppr = g.createNode( "fr.tuttle.duranduboi.colorsuppress" ); // suppression BG
-		Graph::Node& invertAlpha= g.createNode( "fr.tuttle.invert" );
-		Graph::Node& invertAlpha2=g.createNode( "fr.tuttle.invert" );
+		Graph::Node& srcInvertAlpha= g.createNode( "fr.tuttle.invert" );
+		Graph::Node& cadreRGBA=g.createNode( "fr.tuttle.invert" );
+		Graph::Node& bgRGBA=g.createNode( "fr.tuttle.invert" );
 		Graph::Node& normalize 	= g.createNode( "fr.tuttle.duranduboi.normalize" ); // amelio qualité masque alpha
-		Graph::Node& gamma  	= g.createNode( "fr.tuttle.gamma" ); // amelio qualité masque alpha
-		Graph::Node& resize 	= g.createNode( "fr.tuttle.resize" );
-		Graph::Node& move2d 	= g.createNode( "fr.tuttle.move2d" );
-		Graph::Node& merge  	= g.createNode( "fr.tuttle.merge" );
-		Graph::Node& merge2 	= g.createNode( "fr.tuttle.merge" );
+		Graph::Node& srcGamma  	= g.createNode( "fr.tuttle.gamma" ); // amelio qualité masque alpha
+		Graph::Node& srcResize 	= g.createNode( "fr.tuttle.resize" );
+		//Graph::Node& move2d 	= g.createNode( "fr.tuttle.move2d" );
+		Graph::Node& mergeSRC_BG  	= g.createNode( "fr.tuttle.merge" );
+		Graph::Node& mergeFRAME 	= g.createNode( "fr.tuttle.merge" );
 		Graph::Node& write  	= g.createNode( "fr.tuttle.jpegwriter" );
-		Graph::Node& writeKey	= g.createNode( "fr.tuttle.jpegwriter" );
-		Graph::Node& writeMerge1	= g.createNode( "fr.tuttle.jpegwriter" );
+		
+		Graph::Node& crop  	= g.createNode( "fr.tuttle.crop" );
+		
+		//Graph::Node& writeKey	= g.createNode( "fr.tuttle.jpegwriter" );
+		//Graph::Node& writeMerge1	= g.createNode( "fr.tuttle.jpegwriter" );
 		//Graph::Node& writeKey    = g.createNode( "fr.tuttle.imagemagickwriter" ); // aucun effet, setParam doit pas fonctionner
 
 		TUTTLE_COUT( "__________________________________________________2 Param nodes" );
@@ -173,25 +180,31 @@ int main( int argc, char** argv )
 		source.getParam( "filename" ).set( src );
 		cadre.getParam( "filename" ).set( frame );
 		background.getParam( "filename" ).set( bg );
-		
+		source.getParam( "flip" ).set( true );
+		cadre.getParam( "flip" ).set( true );
+		background.getParam( "flip" ).set( true );
 		// passe de 8 bits à 32 (floats)
-		sourceBd.getParam( "outputBitDepth" ).set( 3 );
-		cadreBd.getParam( "outputBitDepth" ).set( 3 );
-		backgroundBd.getParam( "outputBitDepth" ).set( 3 );
+		sourceBd.getParam( "outputBitDepth" ).set( "float" );
+		cadreBd.getParam( "outputBitDepth" ).set( "float" );
+		backgroundBd.getParam( "outputBitDepth" ).set( "float" );
 
 		colorSuppr.getParam( "greenRate" ).set( suppG );
 		colorSuppr.getParam( "blueRate" ).set( suppB );
 		colorSuppr.getParam( "redRate" ).set( suppR );
 		colorSuppr.getParam( "output" ).set( 2 ); // 2: modifie l'image et sort la couche alpha
-		//TUTTLE_COUT_VAR(invertAlpha);
-		invertAlpha.getParam( "processR" ).set( false );
-		invertAlpha.getParam( "processG" ).set( false );
-		invertAlpha.getParam( "processB" ).set( false );
-		invertAlpha.getParam( "processA" ).set( true );
-		invertAlpha2.getParam( "processR" ).set( false );
-		invertAlpha2.getParam( "processG" ).set( false );
-		invertAlpha2.getParam( "processB" ).set( false );
-		invertAlpha2.getParam( "processA" ).set( true );
+		//TUTTLE_COUT_VAR(srcInvertAlpha);
+		srcInvertAlpha.getParam( "processR" ).set( false );
+		srcInvertAlpha.getParam( "processG" ).set( false );
+		srcInvertAlpha.getParam( "processB" ).set( false );
+		srcInvertAlpha.getParam( "processA" ).set( true );
+		cadreRGBA.getParam( "processR" ).set( false );
+		cadreRGBA.getParam( "processG" ).set( false );
+		cadreRGBA.getParam( "processB" ).set( false );
+		cadreRGBA.getParam( "processA" ).set( true );
+		bgRGBA.getParam( "processR" ).set( false );
+		bgRGBA.getParam( "processG" ).set( false );
+		bgRGBA.getParam( "processB" ).set( false );
+		bgRGBA.getParam( "processA" ).set( true );
 		normalize.getParam( "mode" ).set( 1 );
 		normalize.getParam( "srcColorMin" ).setAtIndex( normalizeParam1, 3 ); // 0.2,  3
 		normalize.getParam( "processR" ).set( false );
@@ -199,62 +212,93 @@ int main( int argc, char** argv )
 		normalize.getParam( "processB" ).set( false );
 		normalize.getParam( "processA" ).set( true );
 		
-		resize.getParam( "size" ).set( resizeW, resizeH );
-		move2d.getParam( "translation" ).set( moveX, moveY );
+		srcResize.getParam( "size" ).set( resizeW, resizeH );
 		
-		gamma.getParam( "gammaType" ).set( "RGBA" );
-		gamma.getParam( "alpha" ).set( paramGamma );
-		merge.getParam( "mergingFunction" ).set( 19 );
-		//merge.getParam( "rod" ).set( "B" ); // TODO
-		merge2.getParam( "mergingFunction" ).set( 19 );
+		//crop.getParam( "presets" ).set("1.77 (16/9e) bands");//.set( 16./9. );
+		//crop.getParam( "presets" ).set(2);
+		
+		srcGamma.getParam( "gammaType" ).set( "RGBA" );
+		srcGamma.getParam( "alpha" ).set( paramGamma );
+		mergeSRC_BG.getParam( "mergingFunction" ).set( "matte" );
+		mergeSRC_BG.getParam( "rod" ).set( "B" ); 
+		mergeSRC_BG.getParam( "offsetA" ).set( moveX, moveY );
+		mergeFRAME.getParam( "mergingFunction" ).set( 19 );
 		write.getParam( "premult" ).set( false );
 		write.getParam( "filename" ).set( out );
-		writeKey.getParam( "premult" ).set( false );
-		writeKey.getParam( "filename" ).set( "data/key/outputKey.jpg" );
-		writeMerge1.getParam( "premult" ).set( false );
-		writeMerge1.getParam( "filename" ).set( "data/key/outputMerge1.jpg" );
+		//writeKey.getParam( "premult" ).set( false );
+		//writeKey.getParam( "filename" ).set( "data/key/outputKey.jpg" );
+		//writeMerge1.getParam( "premult" ).set( false );
+		//writeMerge1.getParam( "filename" ).set( "data/key/outputMerge1.jpg" );
 		
 		TUTTLE_COUT( "__________________________________________________3 Connect nodes" );
 		// passage des trois images 8 bits => float
 		g.connect( source, sourceBd );
-		g.connect( cadre, cadreBd );
+		if(frame!="noframe"){
+			g.connect( cadre, cadreBd );
+			g.connect( cadreBd, cadreRGBA );
+		}else{
+		}
 		g.connect( background, backgroundBd );
-
+		if(ratio>0.1f){
+			std::cout<< "crop with ratio:" <<ratio<<std::endl;
+			g.connect( backgroundBd, crop ); // crop
+			g.connect( crop, bgRGBA );
+		}else{
+			// no crop
+			TUTTLE_COUT( "no crop" );
+			g.connect( backgroundBd, bgRGBA );
+		}
+		
 		// suppression de BG 
-		g.connect( sourceBd, colorSuppr );
-		g.connect( colorSuppr, invertAlpha );
-		// amélio Alpha
-		g.connect( invertAlpha, gamma );
+		if(bgExtract){
+			g.connect( sourceBd, colorSuppr );
+			g.connect( colorSuppr, srcInvertAlpha );
+			// amélio Alpha
+			g.connect( srcInvertAlpha, srcGamma );
+		}
+		else{
+			//mergeSRC_BG.getParam( "mergingFunction" ).set( "copy" ); // only A
+			g.connect( sourceBd, srcInvertAlpha );
+		}
 
 		std::cout<< "resizeW:" <<resizeW <<" resizeH:" <<resizeH <<" moveX:" <<moveX <<" moveY:" <<moveY <<std::endl;
-		if(resizeW<1.f && resizeH < 1.f && moveX < 0.5f && moveY < 0.5f)
+		if(resizeW<1.f || resizeH < 1.f)
 		{
-			TUTTLE_COUT( "no resize, no move" );
-			g.connect( gamma, merge.getClip("A") );
-			//g.connect( invertAlpha, merge.getClip("A") ); // test
+			TUTTLE_COUT( "no resize" );
+			if(bgExtract)
+				g.connect( srcGamma, mergeSRC_BG.getClip("A") );
+			else
+				g.connect( srcInvertAlpha, mergeSRC_BG.getClip("A") );
 		}
 		else
 		{
-			TUTTLE_COUT( "resize + move" );
-			g.connect( gamma, resize );
-			g.connect( resize, move2d );
-			
-			g.connect( move2d, merge.getClip("A") );
+			TUTTLE_COUT( "resize" );
+			if(bgExtract){
+				g.connect( srcGamma, srcResize );
+			}
+			else{
+				g.connect( srcInvertAlpha, srcResize );
+			}
+			g.connect( srcResize, mergeSRC_BG.getClip("A") );
 		}
-		g.connect( backgroundBd, merge.getClip("B") ); // TODO fix alpha problem merge
+		g.connect( bgRGBA, mergeSRC_BG.getClip("B") );
 		
-		g.connect( cadreBd, invertAlpha2 );
-		g.connect( invertAlpha2, merge2.getClip("A") );
-		g.connect( merge, merge2.getClip("B") );
 		
-		g.connect( merge2, write );
-		g.connect( invertAlpha, writeKey );
-		g.connect( merge, writeMerge1 ); // test 
+		if(frame!="noframe"){
+			g.connect( cadreRGBA, mergeFRAME.getClip("A") );
+			g.connect( mergeSRC_BG, mergeFRAME.getClip("B") );
+			g.connect( mergeFRAME, write );
+		}else{
+			g.connect( mergeSRC_BG, write );
+		}
+		
+		//g.connect( srcInvertAlpha, writeKey );
+		//g.connect( mergeSRC_BG, writeMerge1 ); // test 
 
 		std::list<std::string> outputs;
 		outputs.push_back( write.getName() );
-		outputs.push_back( writeKey.getName() );
-		outputs.push_back( writeMerge1.getName() );
+		//outputs.push_back( writeKey.getName() );
+		//outputs.push_back( writeMerge1.getName() );
 		TUTTLE_COUT( "__________________________________________________4 process" );
 		g.compute( outputs, 0 );
 //		g.compute( write, 0 );
@@ -272,7 +316,6 @@ int main( int argc, char** argv )
 		std::cerr << "Exception ... : main de photokey." << std::endl;
 		std::cerr << boost::current_exception_diagnostic_information();
 		return -2;
-
 	}
 
 	return 0;
